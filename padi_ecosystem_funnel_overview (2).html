@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI Ecosystem Funnel Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --bg2: #ffffff;
+    --bg3: #eef1f6;
+    --surface: #e8ecf2;
+    --surface2: #dde2ea;
+    --border: rgba(0,32,91,0.08);
+    --border2: rgba(0,32,91,0.15);
+    --text: #00205B;
+    --text2: #3a5080;
+    --text3: #7a90b0;
+    --teal: #009FDF;
+    --teal-dim: rgba(0,159,223,0.10);
+    --teal-mid: rgba(0,159,223,0.20);
+    --blue: #00205B;
+    --blue-dim: rgba(0,32,91,0.08);
+    --amber: #E87722;
+    --amber-dim: rgba(232,119,34,0.10);
+    --red: #C8102E;
+    --red-dim: rgba(200,16,46,0.09);
+    --coral: #E87722;
+    --coral-dim: rgba(232,119,34,0.10);
+    --padi-navy: #00205B;
+    --padi-cyan: #009FDF;
+    --padi-orange: #E87722;
+    --padi-red: #C8102E;
+    --font-display: 'Syne', sans-serif;
+    --font-body: 'Instrument Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    padding: 28px 48px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    background: var(--bg2);
+  }
+  .header-left h1 {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--padi-navy);
+    line-height: 1.1;
+  }
+  .header-left h1 span { color: var(--padi-cyan); }
+  .header-left p { font-size: 12px; color: var(--text2); margin-top: 5px; font-family: var(--font-mono); }
+  .header-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+  .meta-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 14px;
+    text-align: center;
+  }
+  .meta-pill .val { font-family: var(--font-mono); font-size: 18px; font-weight: 500; color: var(--padi-cyan); display: block; }
+  .meta-pill .lbl { font-size: 10px; color: var(--text3); margin-top: 2px; letter-spacing: .04em; text-transform: uppercase; }
+
+  /* ── LAYOUT ── */
+  .main { display: flex; min-height: calc(100vh - 130px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 272px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 130px);
+    overflow-y: auto;
+    background: var(--bg2);
+  }
+  .sidebar-section { padding: 0 16px; margin-bottom: 24px; }
+  .sidebar-section-title {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+  .funnel-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 9px 11px;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 3px;
+    transition: all .15s;
+    position: relative;
+  }
+  .funnel-btn:hover { background: var(--bg3); border-color: var(--border2); }
+  .funnel-btn.active { background: var(--bg3); border-color: var(--border2); }
+  .funnel-btn.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 2px;
+    border-radius: 2px;
+  }
+  .funnel-btn[data-group="discovery"].active::before { background: var(--padi-cyan); }
+  .funnel-btn[data-group="all"].active::before { background: var(--padi-navy); }
+  .funnel-btn[data-group="direct"].active::before { background: var(--padi-orange); }
+  .btn-title { font-size: 12px; font-weight: 500; color: var(--text); margin-bottom: 2px; display: block; }
+  .btn-sub { font-size: 10px; color: var(--text3); font-family: var(--font-mono); }
+  .btn-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── CONTENT ── */
+  .content { flex: 1; padding: 28px 36px; overflow-x: hidden; background: var(--bg); }
+  .funnel-view { display: none; }
+  .funnel-view.active { display: block; }
+
+  .view-header { margin-bottom: 24px; }
+  .view-header h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--padi-navy);
+    margin-bottom: 5px;
+  }
+  .view-header p { font-size: 11px; color: var(--text2); font-family: var(--font-mono); line-height: 1.6; }
+
+  /* ── FUNNEL VISUAL ── */
+  .funnel-visual { display: flex; flex-direction: column; margin-bottom: 28px; }
+  .funnel-step { display: flex; align-items: stretch; gap: 14px; animation: stepIn .3s ease both; }
+  .funnel-step:nth-child(1) { animation-delay: .04s }
+  .funnel-step:nth-child(2) { animation-delay: .10s }
+  .funnel-step:nth-child(3) { animation-delay: .16s }
+  .funnel-step:nth-child(4) { animation-delay: .22s }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+  .step-connector { display: flex; flex-direction: column; align-items: center; width: 36px; flex-shrink: 0; }
+  .step-num-badge {
+    width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; font-family: var(--font-mono); flex-shrink: 0; z-index: 1;
+  }
+  .step-vert-line { width: 1px; flex: 1; min-height: 14px; margin: 3px 0; }
+  .step-body { flex: 1; padding-bottom: 18px; }
+  .step-card {
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    transition: border-color .15s;
+  }
+  .step-card:hover { border-color: var(--padi-cyan); }
+  .step-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+  .step-domain { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+  .step-users { font-family: var(--font-mono); font-size: 20px; font-weight: 500; }
+  .bar-track { height: 7px; background: var(--surface); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width .9s cubic-bezier(.16,1,.3,1); }
+  .step-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
+  .metric-val { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+  .metric-lbl { font-size: 10px; color: var(--text3); margin-top: 1px; text-transform: uppercase; letter-spacing: .04em; }
+  .dropout-row {
+    display: flex; align-items: center; gap: 7px; margin-top: 9px;
+    padding: 5px 9px; background: var(--red-dim);
+    border: 1px solid rgba(200,16,46,0.15); border-radius: 6px;
+    font-size: 11px; font-family: var(--font-mono);
+  }
+  .dropout-icon { color: var(--padi-red); font-size: 13px; }
+  .dropout-num { color: var(--padi-red); font-weight: 500; }
+  .dropout-rate { color: var(--text2); }
+
+  /* ── SUMMARY CARDS ── */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 24px; }
+  .summary-card { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px; }
+  .summary-card .s-val { font-family: var(--font-mono); font-size: 22px; font-weight: 500; display: block; margin-bottom: 3px; }
+  .summary-card .s-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ── COMPARE VIEW ── */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
+  @media(max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 16px; cursor: pointer; transition: border-color .18s;
+  }
+  .compare-card:hover { border-color: var(--padi-cyan); }
+  .compare-card h3 { font-family: var(--font-display); font-size: 12px; font-weight: 600; margin-bottom: 12px; color: var(--padi-navy); }
+  .mini-funnel { display: flex; flex-direction: column; gap: 5px; }
+  .mini-step { display: flex; align-items: center; gap: 7px; }
+  .mini-label { font-size: 10px; font-family: var(--font-mono); color: var(--text2); width: 72px; flex-shrink: 0; }
+  .mini-bar-wrap { flex: 1; }
+  .mini-bar { height: 19px; border-radius: 3px; display: flex; align-items: center; padding: 0 5px; font-size: 10px; font-family: var(--font-mono); color: rgba(255,255,255,0.85); white-space: nowrap; overflow: hidden; }
+  .mini-num { font-size: 10px; font-family: var(--font-mono); color: var(--text2); min-width: 48px; text-align: right; }
+
+  /* ── INSIGHT BOXES ── */
+  .insight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+  @media(max-width:600px) { .insight-row { grid-template-columns: 1fr; } }
+  .insight-box { border-radius: 8px; padding: 12px 14px; border: 1px solid; }
+  .insight-box.warn { background: var(--amber-dim); border-color: rgba(232,119,34,0.2); }
+  .insight-box.good { background: var(--teal-dim); border-color: rgba(0,159,223,0.2); }
+  .insight-box.info { background: var(--blue-dim); border-color: rgba(0,32,91,0.12); }
+  .insight-box.alert { background: var(--red-dim); border-color: rgba(200,16,46,0.2); }
+  .insight-box h4 { font-size: 10px; font-weight: 600; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+  .insight-box.warn h4 { color: var(--padi-orange); }
+  .insight-box.good h4 { color: var(--padi-cyan); }
+  .insight-box.info h4 { color: var(--padi-navy); }
+  .insight-box.alert h4 { color: var(--padi-red); }
+  .insight-box p { font-size: 11px; color: var(--text2); line-height: 1.6; }
+
+  /* ── FLOW TREE ── */
+  .ft-node { cursor: pointer; transition: opacity .18s; }
+  .ft-node:hover { opacity: .82; }
+  .ft-edge { pointer-events: none; }
+  #flow-tree-svg text { font-family: 'DM Mono', monospace; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div style="background:var(--padi-navy);padding:0 48px;height:48px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--padi-cyan)">
+  <svg height="22" viewBox="0 0 80 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <text x="0" y="22" font-family="Syne,sans-serif" font-weight="700" font-size="22" fill="#ffffff" letter-spacing="2">PADI</text>
+  </svg>
+  <div style="width:1px;height:20px;background:rgba(255,255,255,0.2)"></div>
+  <span style="font-size:11px;color:rgba(255,255,255,0.6);font-family:'Instrument Sans',sans-serif;letter-spacing:.04em">Ecosystem Funnel Overview</span>
+</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>PADI Ecosystem <span>Funnel Overview</span></h1>
+    <p>6 funnel paths · store + travel · discovery vs all traffic · closed funnel</p>
+  </div>
+  <div class="header-meta">
+    <div class="meta-pill">
+      <span class="val">6</span>
+      <span class="lbl">Funnels</span>
+    </div>
+    <div class="meta-pill">
+      <span class="val" style="color:var(--blue)">9.7M+</span>
+      <span class="lbl">Total users</span>
+    </div>
+    <div class="meta-pill">
+      <span class="val" style="color:var(--amber)">168K+</span>
+      <span class="lbl">Total purchases</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Overview</div>
+      <button class="funnel-btn active" data-view="compare" data-group="all" onclick="switchView('compare', this)">
+        <span class="btn-title">All Funnels Comparison</span>
+        <span class="btn-sub">Side-by-side view</span>
+      </button>
+      <button class="funnel-btn" data-view="flowtree" data-group="all" onclick="switchView('flowtree', this)">
+        <span class="btn-title">Unified Flow Tree</span>
+        <span class="btn-sub">All paths · one canvas</span>
+        <span class="btn-badge" style="background:var(--coral-dim);color:var(--coral)">New</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Discovery Engine traffic</div>
+      <button class="funnel-btn" data-view="f1" data-group="discovery" onclick="switchView('f1', this)">
+        <span class="btn-title">padi.com → Store</span>
+        <span class="btn-sub">Discovery → Store → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(0,159,223,0.10);color:#009FDF">1,367 purchases</span>
+      </button>
+      <button class="funnel-btn" data-view="f2" data-group="discovery" onclick="switchView('f2', this)">
+        <span class="btn-title">padi.com → Travel</span>
+        <span class="btn-sub">Discovery → Travel → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(0,159,223,0.10);color:#009FDF">174 purchases</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">All traffic</div>
+      <button class="funnel-btn" data-view="f3" data-group="all" onclick="switchView('f3', this)">
+        <span class="btn-title">padi.com → Travel</span>
+        <span class="btn-sub">All traffic → Travel → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(0,32,91,0.10);color:#00205B">8,048 purchases</span>
+      </button>
+      <button class="funnel-btn" data-view="f4" data-group="all" onclick="switchView('f4', this)">
+        <span class="btn-title">padi.com → Store</span>
+        <span class="btn-sub">All traffic → Store → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(0,32,91,0.10);color:#00205B">57,010 purchases</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Direct entry</div>
+      <button class="funnel-btn" data-view="f5" data-group="direct" onclick="switchView('f5', this)">
+        <span class="btn-title">Store direct</span>
+        <span class="btn-sub">Store → View item → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(232,119,34,0.10);color:#E87722">88,982 purchases</span>
+      </button>
+      <button class="funnel-btn" data-view="f6" data-group="direct" onclick="switchView('f6', this)">
+        <span class="btn-title">Travel direct</span>
+        <span class="btn-sub">Travel → View item → ATC → Purchase</span>
+        <span class="btn-badge" style="background:rgba(232,119,34,0.10);color:#E87722">12,911 purchases</span>
+      </button>
+    </div>
+  </div><!-- end sidebar -->
+
+  <div class="content">
+
+    <!-- COMPARE VIEW -->
+    <div class="funnel-view active" id="view-compare">
+      <div class="view-header">
+        <h2>All Funnels — Comparative View</h2>
+        <p>Closed funnel approach — users must complete steps in sequence from Step 1. Comparing purchase volume, drop-off patterns and conversion efficiency across all 6 funnels.</p>
+      </div>
+
+      <div class="compare-grid" id="compare-grid"></div>
+
+      <div class="insight-row">
+        <div class="insight-box info" style="grid-column: 1 / -1;">
+          <h4>Methodology — Closed Funnel</h4>
+          <p>All 6 funnels use the <strong>closed funnel</strong> approach in GA4. This means users are only counted if they enter at <strong>Step 1</strong> and progress through steps in sequence — mid-funnel entries are excluded. This gives a stricter, more conservative view of the journey: the numbers represent users who followed the exact intended path. Drop-off rates are therefore higher than an open funnel would show, but they more accurately reflect the true sequential conversion performance of each path.</p>
+        </div>
+        <div class="insight-box alert">
+          <h4>Biggest leak point</h4>
+          <p>Travel ATC→Purchase in discovery traffic converts at just <strong>7.22%</strong> — 92.78% of users who add to cart on travel.padi.com do not complete. Investigate checkout friction and off-domain payment drop-off.</p>
+        </div>
+        <div class="insight-box good">
+          <h4>Strongest performer</h4>
+          <p>Store direct funnel (Store → View → ATC → Purchase) converts <strong>54.4%</strong> of store visitors to product views and achieves the highest purchase volume at 88,982 — by far the most efficient path.</p>
+        </div>
+        <div class="insight-box warn">
+          <h4>Discovery traffic gap</h4>
+          <p>Discovery engine sends 85,647 users to padi.com but only <strong>1,541 purchase</strong> (1,367 store + 174 travel). That's a 1.8% end-to-end rate. The padi.com → intent domain step loses 55–68K users.</p>
+        </div>
+        <div class="insight-box info">
+          <h4>Store vs Travel intent</h4>
+          <p>In all-traffic funnels, Store delivers <strong>57,010 purchases vs 8,048</strong> for Travel — 7× more. But Travel direct funnel shows 19.98% view-to-ATC rate vs 15.7% for Store, suggesting Travel browsers have higher intent once on-domain.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOW TREE VIEW -->
+    <div class="funnel-view" id="view-flowtree">
+      <div class="view-header">
+        <h2>Unified Flow Tree</h2>
+        <p>All 6 funnels · combined into one path diagram · hover nodes to inspect · closed funnel approach</p>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;align-items:center">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+          <div style="width:10px;height:10px;border-radius:2px;background:#2dd4a0"></div>Discovery traffic
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+          <div style="width:10px;height:10px;border-radius:2px;background:#4da6ff"></div>All traffic
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+          <div style="width:10px;height:10px;border-radius:2px;background:#f5a623"></div>Direct entry
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)">
+          <div style="width:28px;height:2px;background:rgba(255,107,107,0.5);border-radius:1px"></div>Drop-off leak
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-left:auto;font-family:var(--font-mono)">Node size = relative user volume · hover for details</div>
+      </div>
+
+      <!-- SVG Canvas -->
+      <div style="overflow-x:auto;overflow-y:visible">
+        <svg id="flow-tree-svg" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:820px;font-family:'DM Mono',monospace" viewBox="0 0 1100 820"></svg>
+      </div>
+
+      <!-- Tooltip -->
+      <div id="ft-tooltip" style="
+        position:fixed;display:none;
+        background:#ffffff;border:1px solid rgba(0,0,0,0.14);
+        border-radius:10px;padding:14px 16px;pointer-events:none;
+        z-index:1000;min-width:200px;max-width:260px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.12)
+      "></div>
+
+      <!-- Bottom summary strip -->
+      <div id="ft-summary" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:24px"></div>
+    </div>
+
+    <!-- F1: Discovery → Store -->
+    <div class="funnel-view" id="view-f1"></div>
+
+    <!-- F2: Discovery → Travel -->
+    <div class="funnel-view" id="view-f2"></div>
+
+    <!-- F3: All → Travel -->
+    <div class="funnel-view" id="view-f3"></div>
+
+    <!-- F4: All → Store -->
+    <div class="funnel-view" id="view-f4"></div>
+
+    <!-- F5: Store Direct -->
+    <div class="funnel-view" id="view-f5"></div>
+
+    <!-- F6: Travel Direct -->
+    <div class="funnel-view" id="view-f6"></div>
+
+  </div>
+</div>
+
+<script>
+const FUNNELS = {
+  f1: {
+    title: "padi.com → Store (Discovery Engine traffic)",
+    subtitle: "Source: GA4 Funnel · Users entering from Discovery Engine · Closed funnel",
+    group: "discovery",
+    color: "#2dd4a0",
+    steps: [
+      { name: "padi.com", users: 85647 },
+      { name: "store.padi.com", users: 30347 },
+      { name: "Add to Cart", users: 3580 },
+      { name: "Purchase", users: 1367 }
+    ]
+  },
+  f2: {
+    title: "padi.com → Travel (Discovery Engine traffic)",
+    subtitle: "Source: GA4 Funnel · Users entering from Discovery Engine · Closed funnel",
+    group: "discovery",
+    color: "#2dd4a0",
+    steps: [
+      { name: "padi.com", users: 85647 },
+      { name: "travel.padi.com", users: 17055 },
+      { name: "Add to Cart", users: 2410 },
+      { name: "Purchase", users: 174 }
+    ]
+  },
+  f3: {
+    title: "padi.com → Travel (All traffic)",
+    subtitle: "Source: GA4 Funnel · All user traffic · Closed funnel",
+    group: "all",
+    color: "#4da6ff",
+    steps: [
+      { name: "padi.com", users: 9661282 },
+      { name: "travel.padi.com", users: 671181 },
+      { name: "Add to Cart", users: 91618 },
+      { name: "Purchase", users: 8048 }
+    ]
+  },
+  f4: {
+    title: "padi.com → Store (All traffic)",
+    subtitle: "Source: GA4 Funnel · All user traffic · Closed funnel",
+    group: "all",
+    color: "#4da6ff",
+    steps: [
+      { name: "padi.com", users: 9661282 },
+      { name: "store.padi.com", users: 1239017 },
+      { name: "Add to Cart", users: 160219 },
+      { name: "Purchase", users: 57010 }
+    ]
+  },
+  f5: {
+    title: "Store direct funnel (Store → View → ATC → Purchase)",
+    subtitle: "Source: GA4 Funnel · Users starting on store.padi.com · Closed funnel",
+    group: "direct",
+    color: "#f5a623",
+    steps: [
+      { name: "store.padi.com", users: 3069555 },
+      { name: "View item", users: 1669421 },
+      { name: "Add to Cart", users: 262832 },
+      { name: "Purchase", users: 88982 }
+    ]
+  },
+  f6: {
+    title: "Travel direct funnel (Travel → View → ATC → Purchase)",
+    subtitle: "Source: GA4 Funnel · Users starting on travel.padi.com · Closed funnel",
+    group: "direct",
+    color: "#f5a623",
+    steps: [
+      { name: "travel.padi.com", users: 3862278 },
+      { name: "View item", users: 876618 },
+      { name: "Add to Cart", users: 175113 },
+      { name: "Purchase", users: 12911 }
+    ]
+  }
+};
+
+const GROUP_COLORS = { discovery: '#009FDF', all: '#00205B', direct: '#E87722' };
+const STEP_COLORS = ['#009FDF','#00205B','#E87722','#C8102E'];
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(2) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return n.toLocaleString();
+}
+function fmtFull(n) { return n.toLocaleString(); }
+function pct(a, b) { return b > 0 ? ((a/b)*100).toFixed(2) + '%' : '—'; }
+
+function buildFunnelView(id) {
+  const f = FUNNELS[id];
+  const el = document.getElementById('view-' + id);
+  const max = f.steps[0].users;
+  const color = f.color;
+
+  let summaryHTML = `
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span class="s-val" style="color:${color}">${fmtFull(f.steps[0].users)}</span>
+        <span class="s-lbl">Entry users (Step 1)</span>
+      </div>
+      <div class="summary-card">
+        <span class="s-val" style="color:#ff8c69">${fmtFull(f.steps[3].users)}</span>
+        <span class="s-lbl">Purchases (final)</span>
+      </div>
+      <div class="summary-card">
+        <span class="s-val" style="color:var(--text)">${pct(f.steps[3].users, f.steps[0].users)}</span>
+        <span class="s-lbl">End-to-end rate</span>
+      </div>
+      <div class="summary-card">
+        <span class="s-val" style="color:var(--red)">${fmtFull(f.steps[0].users - f.steps[3].users)}</span>
+        <span class="s-lbl">Total drop-off</span>
+      </div>
+    </div>`;
+
+  let stepsHTML = '<div class="funnel-visual">';
+  f.steps.forEach((step, i) => {
+    const isLast = i === f.steps.length - 1;
+    const barWidth = Math.max(4, (step.users / max) * 100);
+    const dropped = isLast ? 0 : step.users - f.steps[i+1].users;
+    const dropRate = isLast ? 0 : ((dropped / step.users)*100);
+    const convRate = isLast ? null : pct(f.steps[i+1].users, step.users);
+
+    stepsHTML += `
+      <div class="funnel-step">
+        <div class="step-connector">
+          <div class="step-num-badge" style="background:${STEP_COLORS[i]}22;color:${STEP_COLORS[i]};border:1px solid ${STEP_COLORS[i]}44">${i+1}</div>
+          ${!isLast ? `<div class="step-vert-line" style="background:linear-gradient(to bottom, ${STEP_COLORS[i]}44, ${STEP_COLORS[i+1]}44)"></div>` : ''}
+        </div>
+        <div class="step-body">
+          <div class="step-card">
+            <div class="step-card-top">
+              <span class="step-domain" style="color:${STEP_COLORS[i]}">${step.name}</span>
+              <span class="step-users" style="color:${STEP_COLORS[i]}">${fmtFull(step.users)}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${barWidth}%;background:${STEP_COLORS[i]}"></div>
+            </div>
+            <div class="step-metrics">
+              ${!isLast ? `
+              <div class="metric-item">
+                <div class="metric-val" style="color:var(--padi-cyan)">${convRate}</div>
+                <div class="metric-lbl">Completion rate</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-val" style="color:var(--red)">${dropRate.toFixed(2)}%</div>
+                <div class="metric-lbl">Abandonment rate</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-val" style="color:var(--text2)">${fmtFull(dropped)}</div>
+                <div class="metric-lbl">Users abandoned</div>
+              </div>` : `
+              <div class="metric-item">
+                <div class="metric-val" style="color:var(--coral)">${pct(step.users, f.steps[0].users)}</div>
+                <div class="metric-lbl">Overall conversion</div>
+              </div>`}
+            </div>
+            ${!isLast ? `
+            <div class="dropout-row">
+              <span class="dropout-icon">↓</span>
+              <span class="dropout-num">−${fmtFull(dropped)}</span>
+              <span class="dropout-rate">users dropped before reaching ${f.steps[i+1].name} (${dropRate.toFixed(1)}%)</span>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  });
+  stepsHTML += '</div>';
+
+  // insights per funnel
+  const weakStep = f.steps.reduce((worst, step, i) => {
+    if (i === f.steps.length - 1) return worst;
+    const rate = f.steps[i+1].users / step.users;
+    return rate < worst.rate ? { rate, name: step.name, next: f.steps[i+1].name, i } : worst;
+  }, { rate: 1, name: '', next: '', i: 0 });
+
+  el.innerHTML = `
+    <div class="view-header">
+      <h2>${f.title}</h2>
+      <p>${f.subtitle}</p>
+    </div>
+    ${summaryHTML}
+    ${stepsHTML}
+    <div class="insight-row">
+      <div class="insight-box alert">
+        <h4>Biggest drop-off</h4>
+        <p><strong>${weakStep.name} → ${weakStep.next}</strong> is the weakest transition in this funnel — only ${pct(f.steps[weakStep.i+1].users, f.steps[weakStep.i].users)} of users continue. Prioritise fixing this step first.</p>
+      </div>
+      <div class="insight-box info">
+        <h4>Final conversion</h4>
+        <p>Of ${fmtFull(f.steps[0].users)} users entering at Step 1, only <strong>${fmtFull(f.steps[3].users)}</strong> complete a purchase — an end-to-end rate of <strong>${pct(f.steps[3].users, f.steps[0].users)}</strong>.</p>
+      </div>
+    </div>`;
+}
+
+function buildCompare() {
+  const grid = document.getElementById('compare-grid');
+  const MAX_USERS = Math.max(...Object.values(FUNNELS).map(f => f.steps[0].users));
+
+  grid.innerHTML = Object.entries(FUNNELS).map(([id, f]) => {
+    const color = GROUP_COLORS[f.group];
+    const mini = f.steps.map((step, i) => {
+      const w = Math.max(3, (step.users / f.steps[0].users) * 100);
+      return `
+        <div class="mini-step">
+          <div class="mini-label">${step.name.replace('store.padi.com','store').replace('travel.padi.com','travel').replace('Add to Cart','ATC').replace('View item','view_item')}</div>
+          <div class="mini-bar-wrap">
+            <div class="mini-bar" style="width:${w}%;background:${STEP_COLORS[i]}aa">${step.users >= 1000 ? fmt(step.users) : step.users}</div>
+          </div>
+          <div class="mini-num">${fmt(step.users)}</div>
+        </div>`;
+    }).join('');
+
+    const overallRate = ((f.steps[3].users / f.steps[0].users)*100).toFixed(3);
+
+    return `
+      <div class="compare-card" onclick="switchView('${id}', null)">
+        <h3>${f.title}</h3>
+        <div class="mini-funnel">${mini}</div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+          <div>
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:${color}">${fmtFull(f.steps[3].users)}</div>
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Purchases</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--font-mono);font-size:16px;font-weight:500;color:var(--text2)">${overallRate}%</div>
+            <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">End-to-end rate</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function switchView(id, btnEl) {
+  document.querySelectorAll('.funnel-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.funnel-btn').forEach(b => b.classList.remove('active'));
+
+  document.getElementById('view-' + id).classList.add('active');
+
+  if (btnEl) {
+    btnEl.classList.add('active');
+  } else {
+    // clicking a compare card — find matching btn
+    const btn = document.querySelector(`.funnel-btn[data-view="${id}"]`);
+    if (btn) btn.classList.add('active');
+  }
+}
+
+// Init
+Object.keys(FUNNELS).forEach(buildFunnelView);
+buildCompare();
+
+// Animate bars on load
+setTimeout(() => {
+  document.querySelectorAll('.bar-fill').forEach(b => {
+    const w = b.style.width;
+    b.style.width = '0';
+    requestAnimationFrame(() => { b.style.width = w; });
+  });
+}, 100);
+
+// ══════════════════════════════════════════════
+// UNIFIED FLOW TREE
+// ══════════════════════════════════════════════
+function buildFlowTree() {
+  const svg = document.getElementById('flow-tree-svg');
+  const W = 1100, H = 820;
+  const PAD = 32;
+
+  // ── Node definitions ──────────────────────────────────────────
+  // Each node: id, label, sublabel, users (aggregated), color, col, row
+  // Columns: 0=entry, 1=padi.com, 2=intent, 3=ATC, 4=purchase
+
+  const NODES = [
+    // Entry nodes (col 0)
+    { id:'entry-disc',   label:'padi.com',      sub:'Discovery engine',  users:85647,    color:'#009FDF', col:0, row:0 },
+    { id:'entry-all',    label:'padi.com',       sub:'All traffic',       users:9661282,  color:'#00205B', col:0, row:1 },
+    { id:'entry-store',  label:'store.padi.com', sub:'Direct entry',      users:3069555,  color:'#E87722', col:0, row:2 },
+    { id:'entry-travel', label:'travel.padi.com',sub:'Direct entry',      users:3862278,  color:'#E87722', col:0, row:3 },
+
+    // Intent nodes (col 1) — store path
+    { id:'int-disc-store',  label:'store.padi.com', sub:'Discovery → Store',  users:30347,   color:'#009FDF', col:1, row:0 },
+    { id:'int-disc-travel', label:'travel.padi.com',sub:'Discovery → Travel', users:17055,   color:'#009FDF', col:1, row:1 },
+    { id:'int-all-travel',  label:'travel.padi.com',sub:'All → Travel',       users:671181,  color:'#00205B', col:1, row:2 },
+    { id:'int-all-store',   label:'store.padi.com', sub:'All → Store',        users:1239017, color:'#00205B', col:1, row:3 },
+    { id:'int-dir-store-vi',label:'view_item',       sub:'Store direct',       users:1669421, color:'#E87722', col:1, row:4 },
+    { id:'int-dir-travel-vi',label:'view_item',      sub:'Travel direct',      users:876618,  color:'#E87722', col:1, row:5 },
+
+    // ATC nodes (col 2)
+    { id:'atc-disc-store',   label:'Add to Cart', sub:'Disc→Store',    users:3580,   color:'#009FDF', col:2, row:0 },
+    { id:'atc-disc-travel',  label:'Add to Cart', sub:'Disc→Travel',   users:2410,   color:'#009FDF', col:2, row:1 },
+    { id:'atc-all-travel',   label:'Add to Cart', sub:'All→Travel',    users:91618,  color:'#00205B', col:2, row:2 },
+    { id:'atc-all-store',    label:'Add to Cart', sub:'All→Store',     users:160219, color:'#00205B', col:2, row:3 },
+    { id:'atc-dir-store',    label:'Add to Cart', sub:'Store direct',  users:262832, color:'#E87722', col:2, row:4 },
+    { id:'atc-dir-travel',   label:'Add to Cart', sub:'Travel direct', users:175113, color:'#E87722', col:2, row:5 },
+
+    // Purchase nodes (col 3)
+    { id:'pur-disc-store',   label:'Purchase', sub:'Disc→Store',    users:1367,  color:'#009FDF', col:3, row:0 },
+    { id:'pur-disc-travel',  label:'Purchase', sub:'Disc→Travel',   users:174,   color:'#009FDF', col:3, row:1 },
+    { id:'pur-all-travel',   label:'Purchase', sub:'All→Travel',    users:8048,  color:'#00205B', col:3, row:2 },
+    { id:'pur-all-store',    label:'Purchase', sub:'All→Store',     users:57010, color:'#00205B', col:3, row:3 },
+    { id:'pur-dir-store',    label:'Purchase', sub:'Store direct',  users:88982, color:'#E87722', col:3, row:4 },
+    { id:'pur-dir-travel',   label:'Purchase', sub:'Travel direct', users:12911, color:'#E87722', col:3, row:5 },
+  ];
+
+  // Edges: from → to, users flowing
+  const EDGES = [
+    // Discovery → intent
+    { from:'entry-disc',  to:'int-disc-store',   users:30347  },
+    { from:'entry-disc',  to:'int-disc-travel',  users:17055  },
+    // All traffic → intent
+    { from:'entry-all',   to:'int-all-travel',   users:671181 },
+    { from:'entry-all',   to:'int-all-store',    users:1239017},
+    // Direct → view_item
+    { from:'entry-store', to:'int-dir-store-vi', users:1669421},
+    { from:'entry-travel',to:'int-dir-travel-vi',users:876618 },
+    // intent → ATC
+    { from:'int-disc-store',   to:'atc-disc-store',  users:3580   },
+    { from:'int-disc-travel',  to:'atc-disc-travel', users:2410   },
+    { from:'int-all-travel',   to:'atc-all-travel',  users:91618  },
+    { from:'int-all-store',    to:'atc-all-store',   users:160219 },
+    { from:'int-dir-store-vi', to:'atc-dir-store',   users:262832 },
+    { from:'int-dir-travel-vi',to:'atc-dir-travel',  users:175113 },
+    // ATC → Purchase
+    { from:'atc-disc-store',  to:'pur-disc-store',  users:1367  },
+    { from:'atc-disc-travel', to:'pur-disc-travel', users:174   },
+    { from:'atc-all-travel',  to:'pur-all-travel',  users:8048  },
+    { from:'atc-all-store',   to:'pur-all-store',   users:57010 },
+    { from:'atc-dir-store',   to:'pur-dir-store',   users:88982 },
+    { from:'atc-dir-travel',  to:'pur-dir-travel',  users:12911 },
+  ];
+
+  // ── Layout computation ──────────────────────────────────────
+  const COLS = 4;
+  const colX = [80, 340, 620, 900];
+  const ROW_SLOTS = 6;
+  const rowH = (H - PAD*2) / ROW_SLOTS;
+
+  // Assign Y positions per (col, row)
+  const nodeMap = {};
+  NODES.forEach(n => {
+    n.cx = colX[n.col];
+    n.cy = PAD + n.row * rowH + rowH * 0.5;
+    nodeMap[n.id] = n;
+  });
+
+  // Node radius: scale by log of users, capped
+  const allUsers = NODES.map(n => n.users);
+  const maxU = Math.max(...allUsers);
+  const minU = Math.min(...allUsers);
+  function nodeR(users) {
+    const t = (Math.log(users) - Math.log(minU)) / (Math.log(maxU) - Math.log(minU));
+    return 14 + t * 26;
+  }
+
+  // Edge stroke width: scale by users relative to source node
+  function edgeW(edge) {
+    const src = nodeMap[edge.from];
+    const t = edge.users / src.users;
+    return Math.max(1, Math.min(18, t * 22));
+  }
+
+  function fmt2(n) {
+    if (n >= 1000000) return (n/1000000).toFixed(2)+'M';
+    if (n >= 1000) return (n/1000).toFixed(1)+'K';
+    return n.toString();
+  }
+  function pct2(a,b) { return b>0?((a/b)*100).toFixed(1)+'%':'—'; }
+
+  // ── Column labels ──────────────────────────────────────────
+  const COL_LABELS = ['Entry point','Intent domain','Add to Cart','Purchase'];
+  const COL_COLORS = ['#009FDF','#6b7280','#E87722','#C8102E'];
+
+  let svgContent = `
+    <defs>
+      <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M1 1L7 4L1 7" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="context-stroke"/>
+      </marker>
+    </defs>`;
+
+  // Column header lines + labels
+  COL_LABELS.forEach((lbl, i) => {
+    const x = colX[i];
+    svgContent += `
+      <line x1="${x}" y1="18" x2="${x}" y2="${H-10}" stroke="rgba(0,0,0,0.06)" stroke-width="1" stroke-dasharray="4 4"/>
+      <text x="${x}" y="14" text-anchor="middle" font-size="9" fill="${COL_COLORS[i]}" font-weight="600" letter-spacing="0.08em" text-transform="uppercase">${lbl.toUpperCase()}</text>`;
+  });
+
+  // ── Draw edges ──────────────────────────────────────────────
+  EDGES.forEach(edge => {
+    const src = nodeMap[edge.from];
+    const dst = nodeMap[edge.to];
+    if (!src || !dst) return;
+    const w = edgeW(edge);
+    const x1 = src.cx + nodeR(src.users);
+    const x2 = dst.cx - nodeR(dst.users);
+    const y1 = src.cy, y2 = dst.cy;
+    const mx = (x1 + x2) / 2;
+
+    svgContent += `
+      <path class="ft-edge" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"
+        fill="none" stroke="${src.color}" stroke-width="${w}"
+        stroke-opacity="0.22" marker-end="url(#arr)"/>`;
+  });
+
+  // Drop-off leak lines (from each node, a red bleed going right)
+  NODES.forEach(n => {
+    // find outgoing edges total
+    const outTotal = EDGES.filter(e => e.from === n.id).reduce((s,e) => s+e.users, 0);
+    const leak = n.users - outTotal;
+    if (leak <= 0 || n.col === 3) return; // last col has no outgoing
+    const leakW = Math.max(1, (leak / n.users) * nodeR(n.users) * 0.9);
+    const x1 = n.cx + nodeR(n.users);
+    const x2 = x1 + 36;
+    const y = n.cy + nodeR(n.users) * 0.3;
+    svgContent += `
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y + 12}"
+        stroke="#d63a3a" stroke-width="${Math.min(leakW, 8)}" stroke-opacity="0.45"
+        stroke-linecap="round"/>
+      <text x="${x2+4}" y="${y+14}" font-size="8" fill="#d63a3a" opacity="0.7">−${fmt2(leak)}</text>`;
+  });
+
+  // ── Draw nodes ──────────────────────────────────────────────
+  NODES.forEach(n => {
+    const r = nodeR(n.users);
+    const isEntry = n.col === 0;
+    const isPurchase = n.col === 3;
+
+    svgContent += `
+      <g class="ft-node" id="ftn-${n.id}"
+        onmouseenter="ftShowTip(event,'${n.id}')"
+        onmouseleave="ftHideTip()"
+        onclick="ftNodeClick('${n.id}')">
+        <circle cx="${n.cx}" cy="${n.cy}" r="${r}"
+          fill="${n.color}18" stroke="${n.color}" stroke-width="${isPurchase?2:1.5}"
+          stroke-opacity="0.8"/>
+        ${isPurchase ? `<circle cx="${n.cx}" cy="${n.cy}" r="${r*0.55}" fill="${n.color}" fill-opacity="0.25"/>` : ''}
+        <text x="${n.cx}" y="${n.cy - 4}" text-anchor="middle" font-size="9" fill="${n.color}" font-weight="600">${n.label.replace('store.padi.com','store').replace('travel.padi.com','travel').replace('Add to Cart','ATC')}</text>
+        <text x="${n.cx}" y="${n.cy + 8}" text-anchor="middle" font-size="8" fill="rgba(0,0,0,0.45)">${fmt2(n.users)}</text>
+        ${isEntry || isPurchase ? `<text x="${n.cx}" y="${n.cy + 19}" text-anchor="middle" font-size="7.5" fill="rgba(0,0,0,0.35)">${n.sub}</text>` : ''}
+      </g>`;
+  });
+
+  svg.innerHTML = svgContent;
+
+  // ── Summary strip ──────────────────────────────────────────
+  const summaryItems = [
+    {
+      val: '168,492',
+      lbl: 'Total purchases across all 6 funnels',
+      sub: 'Sum of all purchase events tracked',
+      color: '#009FDF',
+      icon: '🛒'
+    },
+    {
+      val: '88,982',
+      lbl: 'Purchases via Store direct funnel',
+      sub: 'Highest volume path: store.padi.com → view → ATC → buy',
+      color: '#009FDF',
+      icon: '🏆'
+    },
+    {
+      val: '0.18%',
+      lbl: 'Discovery → Travel conversion rate',
+      sub: 'Of 85,647 discovery users, only 174 purchased on travel.padi.com',
+      color: '#C8102E',
+      icon: '⚠️'
+    },
+    {
+      val: '1.60%',
+      lbl: 'Discovery → Store conversion rate',
+      sub: 'Of 85,647 discovery users, 1,367 purchased on store.padi.com',
+      color: '#00205B',
+      icon: '📊'
+    },
+    {
+      val: '2.90%',
+      lbl: 'Store direct funnel conversion rate',
+      sub: 'Users who landed directly on store.padi.com and completed a purchase',
+      color: '#E87722',
+      icon: '📈'
+    },
+    {
+      val: '0.33%',
+      lbl: 'Travel direct funnel conversion rate',
+      sub: 'Users who landed directly on travel.padi.com and completed a purchase',
+      color: '#E87722',
+      icon: '📉'
+    },
+  ];
+  document.getElementById('ft-summary').innerHTML = summaryItems.map(s => `
+    <div style="background:#fff;border:1px solid rgba(0,32,91,0.10);border-radius:10px;padding:16px 16px 14px;border-top:3px solid ${s.color}">
+      <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:${s.color};margin-bottom:5px">${s.val}</div>
+      <div style="font-size:11px;font-weight:600;color:#00205B;margin-bottom:4px;line-height:1.4">${s.lbl}</div>
+      <div style="font-size:10px;color:#7a90b0;line-height:1.5">${s.sub}</div>
+    </div>`).join('');
+}
+
+// ── Tooltip ────────────────────────────────────────────────────
+const FT_NODE_DATA = {
+  'entry-disc':    { label:'padi.com (Discovery)', users:85647,   convTo:'30,347 → Store / 17,055 → Travel', drop:'38,245 (44.7%)', color:'#009FDF' },
+  'entry-all':     { label:'padi.com (All traffic)',users:9661282, convTo:'1,239,017 → Store / 671,181 → Travel', drop:'7,750,084 (80.2%)', color:'#00205B' },
+  'entry-store':   { label:'store.padi.com (Direct)',users:3069555,convTo:'1,669,421 → View item', drop:'1,400,134 (45.6%)', color:'#E87722' },
+  'entry-travel':  { label:'travel.padi.com (Direct)',users:3862278,convTo:'876,618 → View item', drop:'2,985,660 (77.3%)', color:'#E87722' },
+  'int-disc-store':{ label:'store.padi.com',users:30347, convTo:'3,580 → ATC', drop:'26,767 (88.2%)', color:'#009FDF' },
+  'int-disc-travel':{ label:'travel.padi.com',users:17055,convTo:'2,410 → ATC', drop:'14,645 (85.9%)', color:'#009FDF' },
+  'int-all-travel':{ label:'travel.padi.com',users:671181,convTo:'91,618 → ATC', drop:'579,563 (86.4%)', color:'#00205B' },
+  'int-all-store': { label:'store.padi.com',users:1239017,convTo:'160,219 → ATC', drop:'1,078,798 (87.1%)', color:'#00205B' },
+  'int-dir-store-vi':{ label:'View item (Store direct)',users:1669421,convTo:'262,832 → ATC', drop:'1,406,589 (84.3%)', color:'#E87722' },
+  'int-dir-travel-vi':{ label:'View item (Travel direct)',users:876618,convTo:'175,113 → ATC', drop:'701,505 (80.0%)', color:'#E87722' },
+  'atc-disc-store': { label:'Add to Cart (Disc→Store)',  users:3580,  convTo:'1,367 → Purchase', drop:'2,213 (61.8%)', color:'#009FDF' },
+  'atc-disc-travel':{ label:'Add to Cart (Disc→Travel)', users:2410,  convTo:'174 → Purchase',   drop:'2,236 (92.8%)', color:'#009FDF' },
+  'atc-all-travel': { label:'Add to Cart (All→Travel)',  users:91618, convTo:'8,048 → Purchase',  drop:'83,570 (91.2%)', color:'#00205B' },
+  'atc-all-store':  { label:'Add to Cart (All→Store)',   users:160219,convTo:'57,010 → Purchase', drop:'103,209 (64.4%)', color:'#00205B' },
+  'atc-dir-store':  { label:'Add to Cart (Store direct)',users:262832,convTo:'88,982 → Purchase', drop:'173,850 (66.1%)', color:'#E87722' },
+  'atc-dir-travel': { label:'Add to Cart (Travel direct)',users:175113,convTo:'12,911 → Purchase',drop:'162,202 (92.6%)', color:'#E87722' },
+  'pur-disc-store': { label:'Purchase (Disc→Store)',  users:1367,  convTo:'End of funnel', drop:'—', color:'#009FDF' },
+  'pur-disc-travel':{ label:'Purchase (Disc→Travel)', users:174,   convTo:'End of funnel', drop:'—', color:'#009FDF' },
+  'pur-all-travel': { label:'Purchase (All→Travel)',  users:8048,  convTo:'End of funnel', drop:'—', color:'#00205B' },
+  'pur-all-store':  { label:'Purchase (All→Store)',   users:57010, convTo:'End of funnel', drop:'—', color:'#00205B' },
+  'pur-dir-store':  { label:'Purchase (Store direct)',users:88982, convTo:'End of funnel', drop:'—', color:'#E87722' },
+  'pur-dir-travel': { label:'Purchase (Travel direct)',users:12911,convTo:'End of funnel', drop:'—', color:'#E87722' },
+};
+
+function ftShowTip(e, id) {
+  const d = FT_NODE_DATA[id];
+  if (!d) return;
+  const tip = document.getElementById('ft-tooltip');
+  tip.innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:${d.color};margin-bottom:8px;font-family:'DM Mono',monospace">${d.label}</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div>
+        <div style="font-size:18px;font-weight:500;color:#141820;font-family:'DM Mono',monospace">${d.users.toLocaleString()}</div>
+        <div style="font-size:9px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-top:1px">Active users</div>
+      </div>
+      <div style="border-top:1px solid rgba(0,0,0,0.08);padding-top:6px">
+        <div style="font-size:10px;color:#4a5160">Continues to</div>
+        <div style="font-size:11px;color:#2dd4a0;margin-top:2px;font-family:'DM Mono',monospace">${d.convTo}</div>
+      </div>
+      ${d.drop !== '—' ? `
+      <div>
+        <div style="font-size:10px;color:#4a5160">Drop-off</div>
+        <div style="font-size:11px;color:#ff6b6b;margin-top:2px;font-family:'DM Mono',monospace">${d.drop}</div>
+      </div>` : ''}
+    </div>`;
+  tip.style.display = 'block';
+  moveTip(e);
+}
+function moveTip(e) {
+  const tip = document.getElementById('ft-tooltip');
+  tip.style.left = (e.clientX + 16) + 'px';
+  tip.style.top  = (e.clientY - 20) + 'px';
+}
+function ftHideTip() {
+  document.getElementById('ft-tooltip').style.display = 'none';
+}
+function ftNodeClick(id) {
+  // Map node to funnel view
+  const MAP = {
+    'entry-disc':'f1','int-disc-store':'f1','atc-disc-store':'f1','pur-disc-store':'f1',
+    'int-disc-travel':'f2','atc-disc-travel':'f2','pur-disc-travel':'f2',
+    'entry-all':'f3','int-all-travel':'f3','atc-all-travel':'f3','pur-all-travel':'f3',
+    'int-all-store':'f4','atc-all-store':'f4','pur-all-store':'f4',
+    'entry-store':'f5','int-dir-store-vi':'f5','atc-dir-store':'f5','pur-dir-store':'f5',
+    'entry-travel':'f6','int-dir-travel-vi':'f6','atc-dir-travel':'f6','pur-dir-travel':'f6',
+  };
+  const fid = MAP[id];
+  if (fid) switchView(fid, document.querySelector(`.funnel-btn[data-view="${fid}"]`));
+}
+
+// Mouse move for tooltip follow
+document.addEventListener('mousemove', e => {
+  const tip = document.getElementById('ft-tooltip');
+  if (tip && tip.style.display === 'block') moveTip(e);
+});
+
+// ══════════════════════════════════════════════
+// LOCALE LEAKAGE HEATMAP
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// Build flow tree on init
+buildFlowTree();
+
+</script>
+</body>
+</html>

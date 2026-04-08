@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI Organic Traffic — Ecosystem Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --padi-blue:   #0070D3;
+  --padi-red:    #F23D4E;
+  --blue-dark:   #003D73;
+  --blue-mid:    #005BB5;
+  --blue-pale:   #E8F3FC;
+  --blue-xpale:  #F0F7FF;
+  --bg:          #F4F7FB;
+  --surface:     #FFFFFF;
+  --surface-2:   #EEF4FB;
+  --border:      #D0E3F5;
+  --border-hi:   #A8C8ED;
+  --text-1:      #0A1E36;
+  --text-2:      #2E5A8A;
+  --text-3:      #6B8FAF;
+  --text-4:      #A0BDD0;
+
+  /* per-domain accent colours */
+  --d-padi:      #0070D3;
+  --d-blog:      #E8593A;
+  --d-store:     #1A9E6E;
+  --d-account:   #8B3FCC;
+  --d-travel:    #D4920A;
+  --d-learning:  #1492C8;
+  --d-pro:       #003D73;
+  --d-other:     #90A8BB;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text-1);font-family:'Noto Sans',sans-serif;font-size:14px;}
+
+/* ── TOP BAR ── */
+.topbar{height:4px;background:linear-gradient(90deg,var(--padi-blue) 0%,var(--padi-red) 100%);}
+
+/* ── NAV ── */
+.nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,0.95);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:0 32px;
+  display:flex;align-items:center;gap:0;
+}
+.nav-brand{display:flex;align-items:center;gap:10px;padding:12px 0;margin-right:28px;}
+.nav-logo{background:var(--padi-blue);color:#fff;font-weight:700;font-size:15px;letter-spacing:0.1em;padding:4px 10px;border-radius:3px;}
+.nav-title{font-size:12px;font-weight:600;color:var(--text-3);letter-spacing:0.05em;}
+.nav-links{display:flex;gap:2px;}
+.nav-link{
+  padding:14px 16px;font-size:12px;font-weight:600;color:var(--text-3);
+  cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;
+  letter-spacing:0.04em;text-transform:uppercase;
+}
+.nav-link:hover{color:var(--padi-blue);}
+.nav-link.active{color:var(--padi-blue);border-bottom-color:var(--padi-blue);}
+
+/* ── PAGE WRAP ── */
+.wrap{max-width:1200px;margin:0 auto;padding:36px 28px 80px;}
+
+/* ── SECTION ── */
+.section{display:none;}
+.section.active{display:block;}
+
+/* ── HEADER CARD ── */
+.hdr-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:32px 36px;margin-bottom:28px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  position:relative;overflow:hidden;
+}
+.hdr-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--padi-blue),var(--padi-red));
+}
+.hdr-eyebrow{font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--padi-red);margin-bottom:8px;}
+.hdr-card h1{font-size:clamp(22px,2.8vw,32px);font-weight:700;line-height:1.15;letter-spacing:-0.01em;}
+.hdr-card h1 em{font-style:normal;color:var(--padi-blue);}
+.hdr-sub{margin-top:8px;font-size:13px;color:var(--text-3);}
+.hdr-right{text-align:right;flex-shrink:0;}
+.badge{display:inline-block;background:var(--blue-xpale);border:1px solid var(--border-hi);color:var(--padi-blue);font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:4px 10px;border-radius:4px;font-family:'Noto Sans Mono',monospace;margin-bottom:6px;}
+.date-lbl{font-size:11px;color:var(--text-4);font-family:'Noto Sans Mono',monospace;}
+
+/* ── SECTION TITLE ── */
+.sec-title{display:flex;align-items:center;gap:10px;margin-bottom:18px;margin-top:36px;}
+.sec-title h2{font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-1);white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+.sec-pill{background:var(--blue-xpale);border:1px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;font-weight:600;color:var(--padi-blue);letter-spacing:0.08em;white-space:nowrap;}
+
+/* ── KPI STRIP ── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px;position:relative;overflow:hidden;transition:box-shadow 0.2s;}
+.kpi:hover{box-shadow:0 4px 16px rgba(0,112,211,0.1);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--padi-blue);}
+.kpi.red::before{background:var(--padi-red);}
+.kpi.green::before{background:#1A9E6E;}
+.kpi-lbl{font-size:10px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;font-family:'Noto Sans Mono',monospace;}
+.kpi-val{font-size:26px;font-weight:700;color:var(--padi-blue);line-height:1;letter-spacing:-0.02em;}
+.kpi.red .kpi-val{color:var(--padi-red);}
+.kpi.green .kpi-val{color:#1A9E6E;}
+.kpi-sub{margin-top:5px;font-size:11px;color:var(--text-3);}
+
+/* ── GRID LAYOUTS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.col-span-2{grid-column:1/-1;}
+
+/* ── CHART CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px;}
+.card-title{font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:3px;}
+.card-sub{font-size:11px;color:var(--text-3);margin-bottom:18px;}
+
+/* ── DOMAIN SELECTOR ── */
+.domain-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.dtab{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border);background:var(--surface);
+  color:var(--text-3);transition:all 0.15s;
+}
+.dtab:hover{border-color:var(--padi-blue);color:var(--padi-blue);}
+.dtab.active{color:#fff;border-color:transparent;}
+.dtab-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* ── DOMAIN DETAIL PANEL ── */
+.domain-panel{display:none;}
+.domain-panel.visible{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+
+/* ── STORY CARDS ── */
+.story-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:0;overflow:hidden;
+}
+.story-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.story-domain{font-size:12px;font-weight:700;color:var(--text-2);}
+.story-metric{font-size:11px;color:var(--text-3);font-family:'Noto Sans Mono',monospace;}
+
+.lp-list{padding:0;}
+.lp-item{
+  display:grid;grid-template-columns:1fr auto;
+  padding:11px 20px;border-bottom:1px solid #EEF4FB;
+  align-items:center;gap:12px;transition:background 0.12s;
+}
+.lp-item:hover{background:var(--blue-xpale);}
+.lp-item:last-child{border-bottom:none;}
+.lp-rank{font-size:10px;font-weight:700;color:var(--text-4);font-family:'Noto Sans Mono',monospace;margin-right:10px;min-width:18px;}
+.lp-path{font-family:'Noto Sans Mono',monospace;font-size:11px;color:var(--text-1);font-weight:500;word-break:break-all;}
+.lp-label{font-size:10px;color:var(--text-3);margin-top:2px;}
+.lp-story{font-size:10px;color:var(--padi-blue);margin-top:3px;font-style:italic;}
+.lp-right{text-align:right;flex-shrink:0;}
+.lp-users{font-family:'Noto Sans Mono',monospace;font-size:12px;font-weight:600;color:var(--padi-blue);}
+.lp-eng{font-size:10px;color:var(--text-3);margin-top:2px;}
+.eng-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle;}
+
+/* ── INSIGHT CARDS ── */
+.insight-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;}
+.ins{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px;border-left:4px solid transparent;}
+.ins.blue{border-left-color:var(--padi-blue);}
+.ins.amber{border-left-color:#F5A623;}
+.ins.red{border-left-color:var(--padi-red);}
+.ins.green{border-left-color:#1A9E6E;}
+.ins-icon{font-size:18px;margin-bottom:8px;}
+.ins-title{font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:6px;}
+.ins-body{font-size:12px;color:var(--text-3);line-height:1.65;}
+.ins-body strong{color:var(--text-1);}
+
+/* ── TABLE ── */
+.tbl-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:9px 14px;text-align:left;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2);border-bottom:1px solid var(--border);}
+thead th:not(:first-child){text-align:right;}
+tbody tr{border-bottom:1px solid #EEF4FB;transition:background 0.12s;}
+tbody tr:hover{background:var(--blue-xpale);}
+tbody tr:last-child{border-bottom:none;}
+tbody td{padding:9px 14px;font-size:12px;vertical-align:middle;}
+tbody td:not(:first-child){text-align:right;font-family:'Noto Sans Mono',monospace;font-size:11.5px;color:var(--text-2);}
+.tbl-domain{font-weight:600;color:var(--text-1);display:flex;align-items:center;gap:8px;}
+.color-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pct-bar-wrap{display:flex;align-items:center;justify-content:flex-end;gap:8px;}
+.pct-bar{width:60px;height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden;}
+.pct-bar-fill{height:100%;border-radius:2px;}
+.eng-pill{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;font-family:'Noto Sans Mono',monospace;}
+.eng-hi{background:#E3F0FC;color:#0070D3;}
+.eng-mid{background:#FEF9E7;color:#D4920A;}
+.eng-lo{background:#FDE8EA;color:#C41F2E;}
+
+/* ── FOOTER ── */
+.footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.footer-left{display:flex;align-items:center;gap:10px;}
+.footer-logo{background:var(--padi-blue);color:#fff;font-weight:700;font-size:13px;letter-spacing:0.1em;padding:3px 9px;border-radius:3px;}
+.footer-tag{font-size:11px;color:var(--text-3);}
+.footer-right{font-size:11px;color:var(--text-4);text-align:right;font-family:'Noto Sans Mono',monospace;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.kpi{animation:fadeUp 0.4s ease both;}
+.kpi:nth-child(1){animation-delay:0.04s;}
+.kpi:nth-child(2){animation-delay:0.09s;}
+.kpi:nth-child(3){animation-delay:0.14s;}
+.kpi:nth-child(4){animation-delay:0.19s;}
+.kpi:nth-child(5){animation-delay:0.24s;}
+
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr);}
+  .grid-2,.grid-3,.domain-panel.visible{grid-template-columns:1fr;}
+  .insight-row{grid-template-columns:1fr;}
+  .hdr-card{flex-direction:column;gap:14px;}
+}
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-logo">PADI</div>
+    <div class="nav-title">Organic Analytics</div>
+  </div>
+  <div class="nav-links">
+    <div class="nav-link active" onclick="showSection('ecosystem')">Ecosystem</div>
+    <div class="nav-link" onclick="showSection('domains')">Domain Explorer</div>
+    <div class="nav-link" onclick="showSection('insights')">Analyst Insights</div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══════════════════════════════════════════════ SECTION 1: ECOSYSTEM -->
+<div id="sec-ecosystem" class="section active">
+
+  <div class="hdr-card">
+    <div>
+      <div class="hdr-eyebrow">PADI.com · Organic Traffic</div>
+      <h1>Ecosystem Overview<br><em>Organic Flow &amp; Domain Distribution</em></h1>
+      <div class="hdr-sub">How organic traffic is distributed across the entire PADI web ecosystem · Jan–Dec 2025</div>
+    </div>
+    <div class="hdr-right">
+      <div class="badge">GA4 · Organic Only</div>
+      <div class="date-lbl">Jan 2025 – Dec 2025</div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-lbl">Total Organic Users</div>
+      <div class="kpi-val">9.38M</div>
+      <div class="kpi-sub">Across all PADI domains</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-lbl">Avg Engagement Rate</div>
+      <div class="kpi-val">82.1%</div>
+      <div class="kpi-sub">Weighted across top domains</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Largest Domain</div>
+      <div class="kpi-val">37.0%</div>
+      <div class="kpi-sub">www.padi.com share</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Top Engaged Domain</div>
+      <div class="kpi-val">95%</div>
+      <div class="kpi-sub">account.padi.com</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-lbl">Domains Tracked</div>
+      <div class="kpi-val">108</div>
+      <div class="kpi-sub">Unique hostnames in GA4</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="sec-title"><h2>Traffic Share</h2><div class="sec-line"></div></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Organic Traffic Share by Domain</div>
+      <div class="card-sub">% of total organic users — all PADI hostnames</div>
+      <div style="position:relative;height:300px"><canvas id="donutChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Users vs Engagement Rate</div>
+      <div class="card-sub">Bubble size = Sessions · X = Users · Y = Engagement Rate</div>
+      <div style="position:relative;height:300px"><canvas id="bubbleChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- HOST TABLE -->
+  <div class="sec-title" style="margin-top:32px"><h2>Domain Breakdown</h2><div class="sec-pill">All Tracked Domains</div><div class="sec-line"></div></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Domain</th>
+          <th>Organic Users</th>
+          <th>Sessions</th>
+          <th>Engaged Sessions</th>
+          <th>Traffic Share</th>
+          <th>Engagement Rate</th>
+        </tr>
+      </thead>
+      <tbody id="hostTable"></tbody>
+    </table>
+  </div>
+
+</div><!-- /ecosystem -->
+
+
+<!-- ═══════════════════════════════════════════════ SECTION 2: DOMAIN EXPLORER -->
+<div id="sec-domains" class="section">
+
+  <div class="hdr-card">
+    <div>
+      <div class="hdr-eyebrow">Landing Page Analysis</div>
+      <h1>Domain Explorer<br><em>Top Landing Pages &amp; User Stories</em></h1>
+      <div class="hdr-sub">Select a domain to explore its top organic entry pages and what they tell us</div>
+    </div>
+    <div class="hdr-right">
+      <div class="badge">Top 5 per Domain</div>
+      <div class="date-lbl">Jan 2025 – Dec 2025</div>
+    </div>
+  </div>
+
+  <!-- DOMAIN TABS -->
+  <div class="domain-tabs" id="domainTabs"></div>
+
+  <!-- PANELS (one per domain) -->
+  <div id="domainPanels"></div>
+
+</div><!-- /domains -->
+
+
+<!-- ═══════════════════════════════════════════════ SECTION 3: ANALYST INSIGHTS -->
+<div id="sec-insights" class="section">
+
+  <div class="hdr-card">
+    <div>
+      <div class="hdr-eyebrow">Analyst Perspective</div>
+      <h1>Key Findings &amp;<br><em>Strategic Recommendations</em></h1>
+      <div class="hdr-sub">What the organic data is telling us — and what to do about it</div>
+    </div>
+    <div class="hdr-right">
+      <div class="badge">CRO · Analytics</div>
+      <div class="date-lbl">Jan 2025 – Dec 2025</div>
+    </div>
+  </div>
+
+  <!-- ENGAGEMENT COMPARISON CHART -->
+  <div class="sec-title"><h2>Engagement Rate Comparison</h2><div class="sec-line"></div></div>
+  <div class="card col-span-2">
+    <div class="card-title">Engagement Rate Across Key Domains</div>
+    <div class="card-sub">Higher = more engaged organic sessions — benchmark against 70% threshold</div>
+    <div style="position:relative;height:260px"><canvas id="engBarChart"></canvas></div>
+  </div>
+
+  <!-- SESSIONS vs ENGAGED -->
+  <div class="sec-title" style="margin-top:28px"><h2>Session Quality</h2><div class="sec-line"></div></div>
+  <div class="card">
+    <div class="card-title">Sessions vs Engaged Sessions by Domain</div>
+    <div class="card-sub">The gap between bars = unengaged/bounce sessions</div>
+    <div style="position:relative;height:280px"><canvas id="sessEngChart"></canvas></div>
+  </div>
+
+</div><!-- /insights -->
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-left">
+    <div class="footer-logo">PADI</div>
+    <span class="footer-tag">CRO Analytics · Organic Ecosystem Report · 2024</span>
+  </div>
+  <div class="footer-right">GA4 · All Properties · Organic Traffic<br>Jan 2025 – Dec 2025 · Stakeholder Review</div>
+</footer>
+
+</div><!-- /wrap -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+const hostData = [
+  { host:'www.padi.com',      users:3466050, sess:5568480, engaged:4215134, eng:0.757, color:'#0070D3' },
+  { host:'blog.padi.com',     users:1740765, sess:2248791, engaged:1711419, eng:0.761, color:'#E8593A' },
+  { host:'store.padi.com',    users:1084647, sess:1740083, engaged:1415584, eng:0.814, color:'#1A9E6E' },
+  { host:'account.padi.com',  users:833858,  sess:1855492, engaged:1754792, eng:0.946, color:'#8B3FCC' },
+  { host:'travel.padi.com',   users:816097,  sess:1294096, engaged:1004939, eng:0.777, color:'#D4920A' },
+  { host:'learning.padi.com', users:655257,  sess:2539340, engaged:1969127, eng:0.775, color:'#1492C8' },
+  { host:'pros-blog.padi.com',users:205694,  sess:312000,  engaged:258960,  eng:0.830, color:'#7B6FAF' },
+  { host:'pro.padi.com',      users:158548,  sess:1456964, engaged:1299751, eng:0.892, color:'#003D73' },
+  { host:'apps.padi.com',     users:107492,  sess:1017393, engaged:871327,  eng:0.856, color:'#5B9BD5' },
+  { host:'divejobs.padi.com', users:57903,   sess:89000,   engaged:72090,   eng:0.810, color:'#90A8BB' },
+  { host:'Other domains',     users:251885,  sess:310000,  engaged:186000,  eng:0.600, color:'#C0CDD8' },
+];
+
+const totalUsers = hostData.reduce((a,d)=>a+d.users,0);
+
+const domainPages = {
+  padi: {
+    label:'www.padi.com', color:'#0070D3',
+    totalUsers:3466050, sessions:5568480, engRate:75.7,
+    story: 'The main PADI homepage is the ecosystem\'s largest organic entry point. Users arrive across 6 intent types — from certification lookup to destination research.',
+    pages:[
+      { path:'/', label:'Homepage', users:538306, eng:0.893, story:'Primary organic entry — brand & SEO traffic. High engagement signals intent to explore.' },
+      { path:'/certcard', label:'Cert Card Lookup', users:62934, eng:0.853, story:'Users searching for lost or previous certifications. High repeat-visit signal.' },
+      { path:'/es', label:'Spanish Homepage', users:50016, eng:0.903, story:'Strong Spanish-speaking organic demand — 90%+ engagement suggests localised content is working.' },
+      { path:'/help/scuba-certification-faq', label:'Certification FAQ', users:30712, eng:0.649, story:'Informational intent — pre-purchase research. Lower eng. = opportunity to funnel toward courses.' },
+      { path:'/training/dashboard', label:'Training Dashboard', users:25334, eng:0.999, story:'Near-perfect engagement — these are active learners mid-course. Stickiest page on the domain.' },
+    ]
+  },
+  learning: {
+    label:'learning.padi.com', color:'#1492C8',
+    totalUsers:655257, sessions:2539340, engRate:77.5,
+    story: 'The learning platform receives 655K users but 2.54M sessions — users return repeatedly. Overwhelmingly high engagement signals a deeply active user base.',
+    pages:[
+      { path:'/', label:'Learning Homepage', users:286512, eng:0.997, story:'Effectively 100% engagement — every user arriving here is actively using the platform.' },
+      { path:'/training/dashboard', label:'Training Dashboard', users:139502, eng:0.816, story:'Course progress hub. 82% engagement across 140K users = strong in-platform retention.' },
+      { path:'/login/sign-in/en-US', label:'Sign In (en-US)', users:53403, eng:1.000, story:'Direct login intent. 100% engagement — these users know exactly what they came for.' },
+      { path:'/login/sign-in', label:'Sign In', users:47755, eng:0.988, story:'Returning learners authenticating to continue their course journey.' },
+      { path:'/training/course/455-en-US', label:'OW Course (en-US)', users:36796, eng:0.335, story:'⚠️ Low 33% eng on a key course page is a flag — possible load/UX issue or wrong audience.' },
+    ]
+  },
+  blog: {
+    label:'blog.padi.com', color:'#E8593A',
+    totalUsers:1740765, sessions:2248791, engRate:76.1,
+    story: 'Blog is PADI\'s organic discovery engine — 1.74M users driven almost entirely by viral, curiosity-driven content. Top pages are deliberately non-dive topics that hook a broad audience.',
+    pages:[
+      { path:'/ocean-jokes', label:'Ocean Jokes', users:37468, eng:0.692, story:'Top organic page — pure top-of-funnel. Hooks curious users who may never have thought about diving.' },
+      { path:'/funny-fish-names', label:'Funny Fish Names', users:18509, eng:0.778, story:'Viral content pattern. 78% engagement suggests readers stay to browse more.' },
+      { path:'/the-best-locations-to-swim-dive-with-whale-sharks-by-month', label:'Whale Shark Locations', users:17862, eng:0.856, story:'Highest eng. in top 5 — destination-intent readers. Strong candidate for course/travel CTAs.' },
+      { path:'/', label:'Blog Homepage', users:17689, eng:0.811, story:'Direct/brand blog visitors. 81% eng = editorial readers who explore multiple articles.' },
+      { path:'/sea-life-trivia-questions', label:'Sea Life Trivia', users:16263, eng:0.816, story:'Another viral trivia format. High engagement — content type that clearly resonates organically.' },
+    ]
+  },
+  account: {
+    label:'account.padi.com', color:'#8B3FCC',
+    totalUsers:833858, sessions:1855492, engRate:94.6,
+    story: 'The highest-engaged domain in the ecosystem at 95%. Every top landing page is a functional user action — certification, login, dashboard. Zero wasted traffic.',
+    pages:[
+      { path:'/', label:'Account Homepage', users:350602, eng:1.000, story:'100% engagement across 350K users. These are authenticated PADI members — the most valuable segment.' },
+      { path:'/login/sign-in', label:'Sign In', users:100926, eng:0.714, story:'71% eng on login page — some drop-off post-auth. Worth investigating sign-in friction.' },
+      { path:'/login/sign-in/en-US', label:'Sign In (en-US)', users:67205, eng:0.863, story:'Higher engagement variant — possibly smoother auth flow. Compare vs. above for UX clues.' },
+      { path:'/certcard', label:'Cert Card', users:37285, eng:1.000, story:'100% engagement — certification retrieval is a high-value, task-complete action.' },
+      { path:'/es', label:'Spanish Account', users:34874, eng:1.000, story:'Perfect engagement on Spanish locale — strong signal for deeper Spanish-language investment.' },
+    ]
+  },
+  store: {
+    label:'store.padi.com', color:'#1A9E6E',
+    totalUsers:1084647, sessions:1740083, engRate:81.4,
+    story: 'store.padi.com organic traffic is overwhelmingly course-driven. Users are arriving with clear purchase intent — the question is whether they\'re completing transactions.',
+    pages:[
+      { path:'/', label:'Store Homepage', users:188713, eng:1.000, story:'100% engaged store entrants. Organic visitors who land here are ready to buy or enrol.' },
+      { path:'/en-us/courses', label:'All Courses', users:76078, eng:0.827, story:'Course catalogue browse — high intent. 83% eng suggests users explore before committing.' },
+      { path:'/en-us/courses/open-water-diver/p/60462-1B2C', label:'Open Water Diver', users:74702, eng:0.666, story:'#1 PADI course page — but only 67% eng. Drop-off here = direct revenue risk. CRO priority.' },
+      { path:'/en-us/certification-cards', label:'Certification Cards', users:40122, eng:0.738, story:'Post-course card purchase — transactional intent. 74% eng indicates some friction to complete.' },
+      { path:'/certcard', label:'Cert Card Lookup', users:32764, eng:1.000, story:'100% eng cert lookup — task-completion users. High satisfaction signal.' },
+    ]
+  },
+  travel: {
+    label:'travel.padi.com', color:'#D4920A',
+    totalUsers:816097, sessions:1294096, engRate:77.7,
+    story: 'Travel has strong organic fundamentals — homepage at 91% engagement, locale pages at 97%+. But a massive "(not set)" attribution gap (82K sessions, 10% eng) masks the true picture.',
+    pages:[
+      { path:'/', label:'Travel Homepage', users:72545, eng:0.914, story:'91% engagement — organic travel visitors are highly motivated. Strong top-of-funnel quality.' },
+      { path:'/s/dive-courses/all', label:'All Dive Courses', users:14549, eng:0.664, story:'Course-discovery from travel platform. Cross-sell opportunity with store.padi.com.' },
+      { path:'/s/dive-resorts/all', label:'All Dive Resorts', users:5372, eng:0.835, story:'High-intent resort browsers. 84% eng = serious consideration phase.' },
+      { path:'/liveaboard-diving', label:'Liveaboard Diving', users:5183, eng:0.833, story:'Premium intent segment. Liveaboard searchers are high-LTV customers — deserves dedicated SEO.' },
+      { path:'/de', label:'German Travel', users:4176, eng:0.969, story:'97% engagement — German-speaking dive travel is an underserved, high-quality organic segment.' },
+    ]
+  },
+};
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════
+// HOST TABLE
+// ══════════════════════════════════════════════════════
+const tbody = document.getElementById('hostTable');
+hostData.forEach(d => {
+  const pct = (d.users/totalUsers*100).toFixed(1);
+  const ec  = d.eng>=0.8?'eng-hi':d.eng>=0.6?'eng-mid':'eng-lo';
+  tbody.innerHTML += `<tr>
+    <td><div class="tbl-domain"><div class="color-dot" style="background:${d.color}"></div>${d.host}</div></td>
+    <td>${d.users.toLocaleString()}</td>
+    <td>${d.sess.toLocaleString()}</td>
+    <td>${d.engaged.toLocaleString()}</td>
+    <td><div class="pct-bar-wrap">${pct}%<div class="pct-bar"><div class="pct-bar-fill" style="width:${pct}%;background:${d.color}"></div></div></div></td>
+    <td><span class="eng-pill ${ec}">${(d.eng*100).toFixed(1)}%</span></td>
+  </tr>`;
+});
+
+// ══════════════════════════════════════════════════════
+// DONUT CHART
+// ══════════════════════════════════════════════════════
+Chart.defaults.color='#6B8FAF';
+Chart.defaults.font.family="'Noto Sans',sans-serif";
+Chart.defaults.font.size=11;
+
+new Chart(document.getElementById('donutChart'),{
+  type:'doughnut',
+  data:{
+    labels:hostData.map(d=>d.host),
+    datasets:[{
+      data:hostData.map(d=>d.users),
+      backgroundColor:hostData.map(d=>d.color),
+      borderWidth:2, borderColor:'#fff', hoverOffset:8
+    }]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    cutout:'65%',
+    plugins:{
+      legend:{position:'right',labels:{boxWidth:10,padding:10,font:{size:10}}},
+      tooltip:{callbacks:{label:ctx=>{
+        const pct=(ctx.parsed/totalUsers*100).toFixed(1);
+        return ` ${ctx.parsed.toLocaleString()} users (${pct}%)`;
+      }}}
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// BUBBLE CHART
+// ══════════════════════════════════════════════════════
+new Chart(document.getElementById('bubbleChart'),{
+  type:'bubble',
+  data:{
+    datasets: hostData.slice(0,9).map(d=>({
+      label:d.host.replace('.padi.com','').replace('www.','www'),
+      data:[{x:d.users/1000,y:d.eng*100,r:Math.max(6,Math.sqrt(d.sess/8000))}],
+      backgroundColor:d.color+'99',
+      borderColor:d.color,
+      borderWidth:1.5
+    }))
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'right',labels:{boxWidth:8,padding:8,font:{size:10}}},
+      tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${(ctx.parsed.x*1000).toLocaleString()} users, ${ctx.parsed.y.toFixed(1)}% eng`}}
+    },
+    scales:{
+      x:{grid:{color:'#D0E3F5'},title:{display:true,text:'Users (thousands)',font:{size:10}},ticks:{callback:v=>v+'K'}},
+      y:{grid:{color:'#D0E3F5'},title:{display:true,text:'Engagement Rate %',font:{size:10}},min:50,max:100,ticks:{callback:v=>v+'%'}}
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// ENGAGEMENT BAR CHART
+// ══════════════════════════════════════════════════════
+const engDomains = hostData.slice(0,9);
+new Chart(document.getElementById('engBarChart'),{
+  type:'bar',
+  data:{
+    labels:engDomains.map(d=>d.host.replace('.padi.com','').replace('www.','www')),
+    datasets:[
+      {
+        label:'Engagement Rate',
+        data:engDomains.map(d=>+(d.eng*100).toFixed(1)),
+        backgroundColor:engDomains.map(d=>d.color),
+        borderRadius:4, borderSkipped:false
+      },
+      {
+        label:'70% Threshold',
+        data:engDomains.map(()=>70),
+        type:'line', borderColor:'#F23D4E', borderWidth:1.5,
+        borderDash:[5,4], pointRadius:0, fill:false
+      }
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top',labels:{boxWidth:10,padding:14,font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}%`}}
+    },
+    scales:{
+      x:{grid:{color:'#D0E3F5'},ticks:{font:{size:10}}},
+      y:{grid:{color:'#D0E3F5'},max:105,ticks:{callback:v=>v+'%',font:{size:10}}}
+    }
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// SESSIONS vs ENGAGED
+// ══════════════════════════════════════════════════════
+const top6 = hostData.slice(0,6);
+new Chart(document.getElementById('sessEngChart'),{
+  type:'bar',
+  data:{
+    labels:top6.map(d=>d.host.replace('.padi.com','').replace('www.','www')),
+    datasets:[
+      {label:'Sessions', data:top6.map(d=>d.sess), backgroundColor:'rgba(0,112,211,0.18)', borderColor:'#0070D3', borderWidth:1.5, borderRadius:3, borderSkipped:false},
+      {label:'Engaged Sessions', data:top6.map(d=>d.engaged), backgroundColor:'rgba(0,112,211,0.7)', borderColor:'#005BB5', borderWidth:1, borderRadius:3, borderSkipped:false}
+    ]
+  },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top',labels:{boxWidth:10,padding:14,font:{size:11}}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y.toLocaleString()}`}}
+    },
+    scales:{
+      x:{grid:{color:'#D0E3F5'},ticks:{font:{size:10}}},
+      y:{grid:{color:'#D0E3F5'},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}}
+    }
+  }
+});
+// ══════════════════════════════════════════════════════
+// DOMAIN EXPLORER PANELS
+// ══════════════════════════════════════════════════════
+const tabsEl   = document.getElementById('domainTabs');
+const panelsEl = document.getElementById('domainPanels');
+
+function engColor(e){
+  if(e>=0.85) return '#0070D3';
+  if(e>=0.65) return '#1A9E6E';
+  if(e>=0.45) return '#D4920A';
+  return '#F23D4E';
+}
+
+Object.entries(domainPages).forEach(([key,d],i)=>{
+  // Tab
+  const tab = document.createElement('div');
+  tab.className = 'dtab'+(i===0?' active':'');
+  tab.style.cssText = i===0?`background:${d.color};color:#fff;border-color:${d.color}`:'';
+  tab.innerHTML = `<div class="dtab-dot" style="background:${d.color}"></div>${d.label}`;
+  tab.onclick = ()=>{
+    document.querySelectorAll('.dtab').forEach(t=>{t.classList.remove('active');t.style.cssText='';});
+    document.querySelectorAll('.domain-panel').forEach(p=>p.classList.remove('visible'));
+    tab.classList.add('active');
+    tab.style.cssText=`background:${d.color};color:#fff;border-color:${d.color}`;
+    document.getElementById('panel-'+key).classList.add('visible');
+  };
+  tabsEl.appendChild(tab);
+
+  // Panel
+  const panel = document.createElement('div');
+  panel.id = 'panel-'+key;
+  panel.className = 'domain-panel'+(i===0?' visible':'');
+
+  // Left: story + stats
+  const left = document.createElement('div');
+  left.innerHTML = `
+    <div class="card" style="height:100%">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0"></div>
+        <div class="card-title" style="margin-bottom:0">${d.label}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-3);line-height:1.65;margin-bottom:20px">${d.story}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="background:var(--blue-xpale);border:1px solid var(--border);border-radius:6px;padding:12px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;font-family:'Noto Sans Mono',monospace">Users</div>
+          <div style="font-size:20px;font-weight:700;color:${d.color};letter-spacing:-0.01em">${(d.totalUsers/1000).toFixed(0)}K</div>
+        </div>
+        <div style="background:var(--blue-xpale);border:1px solid var(--border);border-radius:6px;padding:12px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;font-family:'Noto Sans Mono',monospace">Sessions</div>
+          <div style="font-size:20px;font-weight:700;color:${d.color};letter-spacing:-0.01em">${(d.sessions/1000).toFixed(0)}K</div>
+        </div>
+        <div style="background:var(--blue-xpale);border:1px solid var(--border);border-radius:6px;padding:12px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:6px;font-family:'Noto Sans Mono',monospace">Eng. Rate</div>
+          <div style="font-size:20px;font-weight:700;color:${d.color};letter-spacing:-0.01em">${d.engRate}%</div>
+        </div>
+      </div>
+      <div style="margin-top:20px">
+        <canvas id="miniChart-${key}" style="max-height:160px"></canvas>
+      </div>
+    </div>`;
+
+  // Right: landing pages table
+  const right = document.createElement('div');
+  const rows = d.pages.map((p,idx)=>{
+    const ec = engColor(p.eng);
+    return `<div class="lp-item">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div class="lp-rank">#${idx+1}</div>
+        <div>
+          <div class="lp-path">${p.path}</div>
+          <div class="lp-label">${p.label}</div>
+          <div class="lp-story">${p.story}</div>
+        </div>
+      </div>
+      <div class="lp-right">
+        <div class="lp-users">${p.users.toLocaleString()}</div>
+        <div class="lp-eng"><span class="eng-dot" style="background:${ec}"></span>${(p.eng*100).toFixed(0)}% eng</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  right.innerHTML = `<div class="story-card">
+    <div class="story-header">
+      <div class="story-domain">Top 5 Landing Pages</div>
+      <div class="story-metric">Sorted by Organic Users</div>
+    </div>
+    <div class="lp-list">${rows}</div>
+  </div>`;
+
+  panel.appendChild(left);
+  panel.appendChild(right);
+  panelsEl.appendChild(panel);
+
+  // Mini bar chart inside panel
+  setTimeout(()=>{
+    const ctx = document.getElementById('miniChart-'+key);
+    if(!ctx) return;
+    new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels:d.pages.map(p=>p.path.length>20?p.path.slice(0,20)+'…':p.path),
+        datasets:[
+          {label:'Users',data:d.pages.map(p=>p.users),backgroundColor:d.color+'99',borderColor:d.color,borderWidth:1,borderRadius:3,borderSkipped:false},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y.toLocaleString()} users`}}},
+        scales:{
+          x:{grid:{display:false},ticks:{font:{size:9},maxRotation:20}},
+          y:{grid:{color:'#D0E3F5'},ticks:{callback:v=>v>=1000?(v/1000).toFixed(0)+'K':v,font:{size:9}}}
+        }
+      }
+    });
+  },50);
+});
+</script>
+</body>
+</html>

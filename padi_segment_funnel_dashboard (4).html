@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI — Regional Segment Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F4F6F9; --surface:#FFFFFF; --surface2:#EEF2F7;
+  --border:rgba(0,48,135,0.1); --accent:#0077C8; --navy:#003087;
+  --red:#C8102E; --green:#007A4C; --amber:#E07B00; --warn:#FF8C00;
+  --text:#1A1A1A; --muted:#5A6A7A; --dim:#D8E2EC;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:100;height:64px;padding:0 36px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,#003087 0%,#001e5a 60%,#001540 100%);
+  border-bottom:3px solid var(--red);box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-badge{width:38px;height:38px;border-radius:4px;background:var(--red);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Montserrat';font-size:10px;font-weight:900;color:#fff;letter-spacing:.5px;}
+.brand-text h1{font-family:'Montserrat';font-size:1.1rem;font-weight:800;color:#fff;
+  letter-spacing:.8px;text-transform:uppercase;}
+.brand-text p{font-family:'Barlow Condensed';font-size:.65rem;font-weight:500;
+  color:rgba(0,160,220,.85);letter-spacing:2px;text-transform:uppercase;margin-top:1px;}
+.header-stats{display:flex;gap:24px;align-items:center;}
+.hstat-val{font-family:'Montserrat';font-size:.88rem;font-weight:700;color:#fff;}
+.hstat-lbl{font-family:'Barlow Condensed';font-size:.58rem;font-weight:500;
+  color:rgba(255,255,255,.5);letter-spacing:1.5px;text-transform:uppercase;}
+.hstat-divider{width:1px;height:28px;background:rgba(255,255,255,.15);}
+.method-tag{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  border-radius:20px;padding:4px 12px;font-family:'Barlow Condensed';font-size:.65rem;
+  font-weight:600;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-transform:uppercase;}
+
+/* ── TABS ── */
+.tab-nav{display:flex;padding:0 36px;background:#fff;
+  border-bottom:1px solid rgba(0,48,135,.1);box-shadow:0 1px 4px rgba(0,48,135,.06);}
+.tab-btn{padding:13px 20px;font-family:'Barlow Condensed';font-size:.76rem;
+  font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab-btn:hover{color:var(--navy);}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--red);font-weight:700;}
+.tab-pane{display:none;} .tab-pane.active{display:block;}
+
+/* ── LAYOUT ── */
+main{padding:24px 36px 60px;}
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px;}
+.grid-full{margin-bottom:16px;}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid rgba(0,48,135,.08);
+  border-radius:12px;padding:18px 20px;box-shadow:0 1px 6px rgba(0,48,135,.06);}
+.card-title{font-family:'Barlow Condensed';font-size:.7rem;font-weight:700;
+  letter-spacing:2.5px;text-transform:uppercase;color:var(--navy);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.card-title::after{content:'';flex:1;height:1px;background:rgba(0,48,135,.08);}
+
+/* ── KPI CARDS ── */
+.kpi-val{font-family:'Montserrat';font-size:2rem;font-weight:800;color:var(--navy);line-height:1;}
+.kpi-sub{font-size:.72rem;color:var(--muted);margin-top:5px;font-family:'Barlow';}
+.kpi-badge{display:inline-block;padding:3px 10px;border-radius:20px;
+  font-family:'Barlow Condensed';font-size:.65rem;font-weight:600;letter-spacing:.5px;margin-top:6px;}
+.bg-green{background:rgba(0,122,76,.1);color:var(--green);border:1px solid rgba(0,122,76,.2);}
+.bg-amber{background:rgba(224,123,0,.1);color:var(--amber);border:1px solid rgba(224,123,0,.2);}
+.bg-red{background:rgba(200,16,46,.1);color:var(--red);border:1px solid rgba(200,16,46,.2);}
+.bg-blue{background:rgba(0,119,200,.1);color:var(--accent);border:1px solid rgba(0,119,200,.2);}
+
+/* ── METHODOLOGY BANNER ── */
+.method-banner{background:linear-gradient(135deg,rgba(0,48,135,.06) 0%,rgba(0,119,200,.04) 100%);
+  border:1px solid rgba(0,119,200,.2);border-left:4px solid var(--accent);
+  border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:16px;display:flex;gap:16px;align-items:flex-start;}
+.method-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px;}
+.method-title{font-family:'Barlow Condensed';font-size:.72rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--navy);margin-bottom:4px;}
+.method-text{font-size:.8rem;color:var(--muted);line-height:1.6;}
+.method-text strong{color:var(--navy);}
+.method-funnel{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.mf-node{background:var(--navy);color:#fff;padding:4px 12px;border-radius:4px;
+  font-family:'Barlow Condensed';font-size:.7rem;font-weight:600;letter-spacing:1px;}
+.mf-arrow{color:var(--accent);font-weight:700;font-size:.9rem;}
+.mf-desc{font-family:'Barlow';font-size:.68rem;color:var(--muted);font-style:italic;}
+
+/* ── NOT SET WARNING ── */
+.notset-warn{background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.25);
+  border-left:3px solid var(--warn);border-radius:0 8px 8px 0;
+  padding:8px 14px;margin-bottom:12px;font-size:.78rem;color:var(--text);}
+.notset-warn strong{color:var(--warn);}
+
+/* ── REGION PILLS ── */
+.rpills{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.rpill-label{font-family:'Barlow Condensed';font-size:.62rem;font-weight:600;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-right:4px;}
+.rpill{padding:6px 14px;border-radius:6px;font-family:'Barlow Condensed';font-size:.7rem;
+  font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;
+  border:1.5px solid rgba(0,48,135,.15);background:#fff;color:var(--muted);transition:all .15s;}
+.rpill:hover{color:var(--navy);border-color:rgba(0,48,135,.35);background:#F0F5FF;}
+.rpill.active{color:#fff;font-weight:700;}
+
+/* ── FUNNEL BARS ── */
+.fbar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.fbar-label{font-family:'Barlow Condensed';font-size:.72rem;font-weight:600;
+  color:var(--text);min-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fbar-track{flex:1;height:20px;background:#EEF2F7;border-radius:4px;overflow:hidden;}
+.fbar-fill{height:100%;border-radius:4px;display:flex;align-items:center;
+  padding-left:7px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+.fbar-pct{font-family:'Barlow Condensed';font-size:.65rem;color:rgba(255,255,255,.9);font-weight:600;}
+.fbar-users{font-family:'Barlow Condensed';font-size:.68rem;color:var(--muted);
+  min-width:52px;text-align:right;}
+.fbar-purch{font-family:'Barlow Condensed';font-size:.68rem;min-width:44px;text-align:right;}
+
+/* ── TABLE ── */
+table{width:100%;border-collapse:collapse;font-size:.79rem;}
+thead tr{border-bottom:2px solid rgba(0,48,135,.1);}
+th{font-family:'Barlow Condensed';font-size:.62rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;
+  cursor:pointer;white-space:nowrap;user-select:none;}
+th:hover{color:var(--navy);}
+th.sort-asc::after{content:' ▲';font-size:.5rem;}
+th.sort-desc::after{content:' ▼';font-size:.5rem;}
+td{padding:8px 10px;vertical-align:middle;border-bottom:1px solid rgba(0,48,135,.05);}
+tbody tr:hover td{background:rgba(0,119,200,.04);}
+.chip{font-family:'Barlow Condensed';font-size:.7rem;font-weight:600;
+  color:var(--navy);background:rgba(0,48,135,.07);border:1px solid rgba(0,48,135,.12);
+  padding:2px 8px;border-radius:4px;}
+.chip-host{font-family:'Barlow Condensed';font-size:.66rem;font-weight:500;
+  color:var(--muted);background:rgba(0,48,135,.04);border:1px solid rgba(0,48,135,.08);
+  padding:1px 6px;border-radius:3px;margin-left:4px;}
+
+/* ── INSIGHT CARDS ── */
+.ins-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.ins{border-radius:10px;padding:14px 16px;border:1px solid;}
+.ins.pos{background:rgba(0,122,76,.05);border-color:rgba(0,122,76,.18);}
+.ins.warn{background:rgba(224,123,0,.05);border-color:rgba(224,123,0,.18);}
+.ins.risk{background:rgba(200,16,46,.05);border-color:rgba(200,16,46,.18);}
+.ins.info{background:rgba(0,119,200,.05);border-color:rgba(0,119,200,.18);}
+.ins-title{font-family:'Barlow Condensed';font-size:.65rem;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.ins-body{font-size:.8rem;line-height:1.55;color:#2D3748;}
+.ins-body strong{color:var(--navy);}
+.ins.warn .ins-body strong{color:#A05C00;}
+.ins.risk .ins-body strong{color:var(--red);}
+.ins.info .ins-body strong{color:var(--accent);}
+
+/* ── LP QUALITY MATRIX ── */
+.scatter-wrap{position:relative;height:300px;}
+.qual-legend{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;}
+.ql-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--muted);}
+.ql-dot{width:9px;height:9px;border-radius:50%;}
+
+/* ── CHARTS ── */
+.chart-wrap-sm{height:220px;position:relative;}
+.chart-wrap-md{height:280px;position:relative;}
+.chart-wrap-lg{height:320px;position:relative;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:rgba(0,48,135,.2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-badge">PADI</div>
+    <div class="brand-text">
+      <h1>Regional Segment Dashboard</h1>
+      <p>Cross-domain user journey · 11 regions · Referrer-based segments</p>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div>
+      <div class="hstat-val">11</div>
+      <div class="hstat-lbl">Regions</div>
+    </div>
+    <div class="hstat-divider"></div>
+    <div>
+      <div class="hstat-val">358K</div>
+      <div class="hstat-lbl">Segment users</div>
+    </div>
+    <div class="hstat-divider"></div>
+    <div>
+      <div class="hstat-val">5,878</div>
+      <div class="hstat-lbl">Total purchases</div>
+    </div>
+    <div class="hstat-divider"></div>
+    <div class="method-tag">Referrer ⊃ padi.com/[locale]</div>
+  </div>
+</header>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('overview',this)">Overview</button>
+  <button class="tab-btn" onclick="switchTab('funnel',this)">Funnel by Region</button>
+  <button class="tab-btn" onclick="switchTab('landingpages',this)">Landing Page Explorer</button>
+  <button class="tab-btn" onclick="switchTab('quality',this)">LP Quality vs Conversion</button>
+  <button class="tab-btn" onclick="switchTab('raw',this)">Raw Data</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════ OVERVIEW -->
+<div id="tab-overview" class="tab-pane active"><main>
+
+  <!-- Methodology banner -->
+  <div class="method-banner">
+    <div class="method-icon">🔬</div>
+    <div>
+      <div class="method-title">How this data was collected — Referrer-based segment methodology</div>
+      <div class="method-text">Each region is a <strong>GA4 segment</strong> defined as: <strong>page referrer contains padi.com/[locale]</strong> (e.g. padi.com/de for German). This captures users whose session on any PADI subdomain was <strong>referred from a regional locale page</strong> — meaning they actively clicked through. This is a self-selected, higher-intent audience than all site visitors.</div>
+      <div class="method-funnel">
+        <span class="mf-node">padi.com/de</span>
+        <span class="mf-arrow">→ click →</span>
+        <span class="mf-node">any PADI subdomain</span>
+        <span class="mf-arrow">→ lands on →</span>
+        <span class="mf-node">specific page</span>
+        <span class="mf-arrow">→</span>
+        <span class="mf-desc">purchase or drop-off</span>
+      </div>
+      <div style="margin-top:6px;font-size:.75rem;color:var(--amber);font-family:'Barlow';">
+        ⚠️ <strong style="color:var(--amber);">"(not set)" pages</strong> indicate sessions where the referrer chain broke (direct/app traffic) — these inflate bounce rates and are flagged per region.
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="grid-4">
+    <div class="card">
+      <div class="card-title">Top Revenue Region</div>
+      <div class="kpi-val">DE</div>
+      <div class="kpi-sub">1,826 total purchases</div>
+      <div class="kpi-badge bg-green">31% of all regional purchases</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Travel Region</div>
+      <div class="kpi-val">ES</div>
+      <div class="kpi-sub">561 travel purchases · 3.87% conv</div>
+      <div class="kpi-badge bg-blue">Beats DE in travel volume</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Best Store Conv Rate</div>
+      <div class="kpi-val">AR</div>
+      <div class="kpi-sub">6.7% — 214 purch / 3,192 users</div>
+      <div class="kpi-badge bg-green">Highest of all 11 regions</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Largest Tracking Gap</div>
+      <div class="kpi-val">ZH-HANT</div>
+      <div class="kpi-sub">20.9% users hit "(not set)"</div>
+      <div class="kpi-badge bg-amber">Fix referrer tracking</div>
+    </div>
+  </div>
+
+  <!-- Insight strip -->
+  <div class="card grid-full">
+    <div class="card-title">Regional Segments as % of Global www.padi.com Traffic</div>
+    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
+      <div style="flex:2;min-width:340px;position:relative;height:290px;">
+        <canvas id="globalShareChart"></canvas>
+      </div>
+      <div style="flex:1;min-width:260px;">
+        <div style="font-family:'Barlow Condensed';font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);margin-bottom:10px;">Context</div>
+        <p style="font-size:.8rem;color:#2D3748;line-height:1.6;margin-bottom:12px;">
+          All 11 regional segments combined = <strong style="color:var(--red);">14.0%</strong> of global www.padi.com traffic.
+          The other <strong style="color:var(--navy);">86%</strong> never cross into a subdomain via a regional locale referrer.
+        </p>
+        <div id="shareBreakdownList" style="display:flex;flex-direction:column;gap:4px;"></div>
+        <div style="margin-top:12px;padding:10px 14px;background:rgba(0,48,135,.05);border-radius:8px;border-left:3px solid var(--accent);">
+          <div style="font-family:'Barlow Condensed';font-size:.65rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--navy);margin-bottom:3px;">Key insight</div>
+          <div style="font-size:.76rem;color:#4A5568;line-height:1.55;">DE alone is <strong style="color:var(--navy);">3.41%</strong> of all global PADI traffic. Top 3 (DE, ES, FR) = <strong style="color:var(--navy);">7.8%</strong> of global but drive the majority of regional purchases.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ins-grid" style="margin-bottom:16px;">
+    <div class="ins pos">
+      <div class="ins-title">🏆 DE dominates volume</div>
+      <div class="ins-body"><strong>DE generates 1,826 purchases</strong> — more than ES + FR combined. With 87K entry users it's the largest regional segment and drives the most downstream traffic to store and travel.</div>
+    </div>
+    <div class="ins info">
+      <div class="ins-title">💡 AR & TH — hidden quality</div>
+      <div class="ins-body"><strong>AR users average 741s per session</strong> — nearly 10 sessions per user. TH and KO also show 78–80% engagement. These are small but highly committed audiences systematically undervalued.</div>
+    </div>
+    <div class="ins warn">
+      <div class="ins-title">⚠️ Dive Shops — #1 destination</div>
+      <div class="ins-body">The top landing page after click-through is <strong>/[locale]/dive-shops/nearby/</strong> in nearly every region. Users are looking for dive shops, not buying courses. A discovery gap exists between intent and conversion.</div>
+    </div>
+    <div class="ins pos">
+      <div class="ins-title">📈 ES leads travel revenue</div>
+      <div class="ins-body"><strong>ES generates 561 travel purchases</strong> at 3.87% conversion — the highest travel conv rate of all regions and more travel purchases than DE (372). ES users are disproportionately travel-intent.</div>
+    </div>
+    <div class="ins risk">
+      <div class="ins-title">🚨 (not set) tracking gap</div>
+      <div class="ins-body"><strong>56,796 users across 11 regions</strong> have unresolved "(not set)" landing pages. ZH-HANT (20.9%), AR (20%), ZH-HANS (19.2%) are worst affected. These sessions show artificially high bounce rates.</div>
+    </div>
+    <div class="ins info">
+      <div class="ins-title">🔄 Multi-session behaviour</div>
+      <div class="ins-body">Sessions far exceed users in every region. <strong>AR: 9.3 sessions/user, TH: 8.4, ZH-HANS: 3.6</strong>. These aren't one-time visitors — they are returning audiences that the old hostname data couldn't see.</div>
+    </div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Total Purchases by Region</div>
+      <div class="chart-wrap-md"><canvas id="purchByRegion"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Sessions per User (engagement depth)</div>
+      <div class="chart-wrap-md"><canvas id="sessPerUserChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="grid-4" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+    <div class="card">
+      <div class="card-title">Store Conversion Rate %</div>
+      <div class="chart-wrap-sm"><canvas id="storeConv"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Travel Conversion Rate %</div>
+      <div class="chart-wrap-sm"><canvas id="travelConv"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Engagement Rate by Region</div>
+      <div class="chart-wrap-sm"><canvas id="engRate"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">(not set) Tracking Gap %</div>
+      <div class="chart-wrap-sm"><canvas id="notsetChart"></canvas></div>
+    </div>
+  </div>
+
+
+
+</main></div>
+
+<!-- ══════════════════════════════════════════════════ FUNNEL -->
+<div id="tab-funnel" class="tab-pane"><main>
+  <div class="rpills">
+    <span class="rpill-label">Region:</span>
+    <div id="funnelPills"></div>
+  </div>
+  <div class="grid-4" id="funnelKPIs"></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" id="funnelBarTitle">User Flow from Regional Entry</div>
+      <div id="funnelBars"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Conversion Rate — Purchasing Subdomains</div>
+      <div class="chart-wrap-md"><canvas id="convChart"></canvas></div>
+    </div>
+  </div>
+  <div class="card grid-full">
+    <div class="card-title" id="funnelTableTitle">All Subdomains</div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr>
+        <th>Subdomain</th><th>Users</th><th>Reach Rate</th>
+        <th>Purchases</th><th>Conv Rate</th><th>vs Global</th><th>Role</th>
+      </tr></thead>
+      <tbody id="funnelTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+</main></div>
+
+<!-- ══════════════════════════════════════════════════ LANDING PAGE EXPLORER -->
+<div id="tab-landingpages" class="tab-pane"><main>
+  <div class="rpills">
+    <span class="rpill-label">Region:</span>
+    <div id="lpPills"></div>
+  </div>
+  <div id="lpNotSetWarn"></div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;" id="lpDomainFilterRow">
+    <span style="font-family:'Barlow Condensed';font-size:.62rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--navy);">Filter by domain:</span>
+    <select id="lpDomainFilter" onchange="applyLpDomainFilter()"
+      style="background:#fff;border:1.5px solid rgba(0,48,135,.18);border-radius:6px;
+      padding:5px 12px;color:var(--navy);font-family:'Barlow Condensed';font-weight:600;
+      font-size:.72rem;outline:none;cursor:pointer;">
+      <option value="all">All domains</option>
+    </select>
+    <span id="lpDomainCount" style="font-family:'Barlow Condensed';font-size:.68rem;color:var(--muted);"></span>
+  </div>
+  <div class="grid-4" id="lpKPIs"></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" id="lpTableTitle">Top Landing Pages</div>
+      <div style="overflow-x:auto;max-height:420px;overflow-y:auto;">
+      <table>
+        <thead><tr>
+          <th onclick="sortLP(0)">Landing Page</th>
+          <th onclick="sortLP(1)">Subdomain</th>
+          <th onclick="sortLP(2)">Users</th>
+          <th onclick="sortLP(3)">Sessions</th>
+          <th onclick="sortLP(4)">Avg Session</th>
+          <th onclick="sortLP(5)">Bounce %</th>
+          <th onclick="sortLP(6)">Engagement %</th>
+        </tr></thead>
+        <tbody id="lpTableBody"></tbody>
+      </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Pages — Engagement Rate</div>
+      <div class="chart-wrap-lg"><canvas id="lpEngChart"></canvas></div>
+    </div>
+  </div>
+</main></div>
+
+<!-- ══════════════════════════════════════════════════ LP QUALITY VS CONVERSION -->
+<div id="tab-quality" class="tab-pane"><main>
+
+  <div class="method-banner">
+    <div class="method-icon">📐</div>
+    <div>
+      <div class="method-title">What this view shows</div>
+      <div class="method-text">Each region's <strong>landing page engagement quality</strong> (avg engagement rate across top pages) is plotted against its <strong>store conversion rate</strong> (purchases ÷ users who reached store). Regions in the top-right quadrant have both high-quality post-click pages AND strong conversion — they are the benchmark. Regions bottom-right have good conversion despite lower LP quality — opportunity to improve further. Top-left have engaged pages but conversion leakage elsewhere in the funnel.</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">LP Engagement vs Store Conversion Rate</div>
+      <div class="chart-wrap-lg"><canvas id="scatterChart"></canvas></div>
+      <div class="qual-legend" id="scatterLegend"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Avg Session Duration by Region (post-click quality)</div>
+      <div class="chart-wrap-lg"><canvas id="sessionDurChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card grid-full">
+    <div class="card-title">Cross-Region LP Quality Matrix</div>
+    <div style="overflow-x:auto;">
+    <table>
+      <thead><tr>
+        <th>Region</th><th>Entry Users</th><th>Avg Engage %</th>
+        <th>Avg Session (s)</th><th>Sessions/User</th>
+        <th>Store Conv %</th><th>Travel Conv %</th>
+        <th>(not set) %</th><th>Signal</th>
+      </tr></thead>
+      <tbody id="qualityTableBody"></tbody>
+    </table>
+    </div>
+  </div>
+
+</main></div>
+
+<!-- ══════════════════════════════════════════════════ RAW DATA -->
+<div id="tab-raw" class="tab-pane"><main>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+    <input id="rawSearch" type="text" placeholder="Search subdomain or region…"
+      oninput="filterRaw()"
+      style="background:#fff;border:1px solid rgba(0,48,135,.15);border-radius:8px;
+      padding:8px 13px;color:var(--text);font-family:'Barlow Condensed';font-weight:500;
+      font-size:.78rem;outline:none;min-width:220px;">
+    <div style="font-family:'Barlow Condensed';font-size:.68rem;color:var(--muted);margin-left:auto;">
+      Showing <span id="rawCount">0</span> rows
+    </div>
+  </div>
+  <div class="card" style="overflow-x:auto;">
+    <table id="rawTable">
+      <thead><tr id="rawHead"></tr></thead>
+      <tbody id="rawBody"></tbody>
+    </table>
+  </div>
+</main></div>
+
+<script>
+// ========================================================== DATA
+var REGIONS=[
+  {key:"de",label:"DE",lang:"German",color:"#0077C8"},
+  {key:"es",label:"ES",lang:"Spanish",color:"#C8102E"},
+  {key:"fr",label:"FR",lang:"French",color:"#007A4C"},
+  {key:"zh-hans",label:"ZH-HANS",lang:"Simplified Chinese",color:"#E07B00"},
+  {key:"nl",label:"NL",lang:"Dutch",color:"#6B46C1"},
+  {key:"it",label:"IT",lang:"Italian",color:"#0694A2"},
+  {key:"zh-hant",label:"ZH-HANT",lang:"Traditional Chinese",color:"#BE185D"},
+  {key:"ko",label:"KO",lang:"Korean",color:"#2D6A4F"},
+  {key:"ar",label:"AR",lang:"Arabic",color:"#7B4F12"},
+  {key:"ja",label:"JA",lang:"Japanese",color:"#1B4F72"},
+  {key:"th",label:"TH",lang:"Thai",color:"#6D214F"}
+];
+
+var SUBDOMAINS=["www.padi.com","store.padi.com","travel.padi.com","account.padi.com",
+  "learning.padi.com","blog.padi.com","pro.padi.com","pros-blog.padi.com",
+  "apps.padi.com","divejobs.padi.com","club.padi.com","www2.padi.com"];
+
+var SD_ROLE={"www.padi.com":"Entry hub","store.padi.com":"Commerce - Courses",
+  "travel.padi.com":"Commerce - Travel","account.padi.com":"Account mgmt",
+  "learning.padi.com":"E-learning","blog.padi.com":"Content","pro.padi.com":"Professional",
+  "pros-blog.padi.com":"Pro content","apps.padi.com":"Apps","divejobs.padi.com":"Jobs",
+  "club.padi.com":"Membership","www2.padi.com":"Legacy"};
+
+var FUNNEL={"de":{"www.padi.com":{"users":87588,"purchases":0},"store.padi.com":{"users":21407,"purchases":1454},"travel.padi.com":{"users":25356,"purchases":372},"account.padi.com":{"users":14448,"purchases":0},"learning.padi.com":{"users":13071,"purchases":0},"blog.padi.com":{"users":9515,"purchases":0},"pro.padi.com":{"users":1740,"purchases":143},"pros-blog.padi.com":{"users":2270,"purchases":0},"apps.padi.com":{"users":1036,"purchases":0},"divejobs.padi.com":{"users":628,"purchases":0},"club.padi.com":{"users":480,"purchases":0},"www2.padi.com":{"users":245,"purchases":20}},"es":{"www.padi.com":{"users":60992,"purchases":0},"store.padi.com":{"users":18361,"purchases":689},"travel.padi.com":{"users":14484,"purchases":561},"account.padi.com":{"users":15627,"purchases":0},"learning.padi.com":{"users":13479,"purchases":0},"blog.padi.com":{"users":4541,"purchases":0},"pro.padi.com":{"users":2689,"purchases":117},"pros-blog.padi.com":{"users":2158,"purchases":0},"apps.padi.com":{"users":1760,"purchases":0},"divejobs.padi.com":{"users":699,"purchases":0},"club.padi.com":{"users":434,"purchases":0},"www2.padi.com":{"users":327,"purchases":41}},"fr":{"www.padi.com":{"users":52089,"purchases":0},"store.padi.com":{"users":14290,"purchases":934},"travel.padi.com":{"users":12795,"purchases":163},"account.padi.com":{"users":10709,"purchases":0},"learning.padi.com":{"users":9193,"purchases":0},"blog.padi.com":{"users":4122,"purchases":0},"pro.padi.com":{"users":1653,"purchases":143},"pros-blog.padi.com":{"users":1418,"purchases":0},"apps.padi.com":{"users":898,"purchases":0},"divejobs.padi.com":{"users":577,"purchases":0},"club.padi.com":{"users":403,"purchases":0},"www2.padi.com":{"users":214,"purchases":20}},"zh-hans":{"www.padi.com":{"users":31641,"purchases":0},"store.padi.com":{"users":8821,"purchases":138},"travel.padi.com":{"users":9571,"purchases":61},"account.padi.com":{"users":6010,"purchases":0},"learning.padi.com":{"users":2740,"purchases":0},"blog.padi.com":{"users":2015,"purchases":0},"pro.padi.com":{"users":811,"purchases":20},"pros-blog.padi.com":{"users":454,"purchases":0},"apps.padi.com":{"users":577,"purchases":0},"divejobs.padi.com":{"users":199,"purchases":0},"club.padi.com":{"users":199,"purchases":0},"www2.padi.com":{"users":133,"purchases":5}},"nl":{"www.padi.com":{"users":39804,"purchases":0},"store.padi.com":{"users":9974,"purchases":520},"travel.padi.com":{"users":8469,"purchases":138},"account.padi.com":{"users":6673,"purchases":0},"learning.padi.com":{"users":6081,"purchases":0},"blog.padi.com":{"users":3939,"purchases":0},"pro.padi.com":{"users":1056,"purchases":82},"pros-blog.padi.com":{"users":1122,"purchases":0},"apps.padi.com":{"users":617,"purchases":0},"divejobs.padi.com":{"users":418,"purchases":0},"club.padi.com":{"users":204,"purchases":0},"www2.padi.com":{"users":92,"purchases":10}},"it":{"www.padi.com":{"users":31631,"purchases":0},"store.padi.com":{"users":9260,"purchases":270},"travel.padi.com":{"users":8209,"purchases":51},"account.padi.com":{"users":6081,"purchases":0},"learning.padi.com":{"users":5240,"purchases":0},"blog.padi.com":{"users":2964,"purchases":0},"pro.padi.com":{"users":1133,"purchases":87},"pros-blog.padi.com":{"users":1281,"purchases":0},"apps.padi.com":{"users":628,"purchases":0},"divejobs.padi.com":{"users":434,"purchases":0},"club.padi.com":{"users":163,"purchases":0},"www2.padi.com":{"users":112,"purchases":0}},"zh-hant":{"www.padi.com":{"users":18810,"purchases":0},"store.padi.com":{"users":6122,"purchases":112},"travel.padi.com":{"users":3653,"purchases":56},"account.padi.com":{"users":5076,"purchases":0},"learning.padi.com":{"users":4132,"purchases":0},"blog.padi.com":{"users":2745,"purchases":0},"pro.padi.com":{"users":1163,"purchases":128},"pros-blog.padi.com":{"users":852,"purchases":0},"apps.padi.com":{"users":883,"purchases":0},"divejobs.padi.com":{"users":168,"purchases":0},"club.padi.com":{"users":51,"purchases":0},"www2.padi.com":{"users":133,"purchases":10}},"ko":{"www.padi.com":{"users":17519,"purchases":0},"store.padi.com":{"users":6689,"purchases":194},"travel.padi.com":{"users":0,"purchases":0},"account.padi.com":{"users":6327,"purchases":0},"learning.padi.com":{"users":0,"purchases":0},"blog.padi.com":{"users":0,"purchases":0},"pro.padi.com":{"users":0,"purchases":0},"pros-blog.padi.com":{"users":0,"purchases":0},"apps.padi.com":{"users":0,"purchases":0},"divejobs.padi.com":{"users":0,"purchases":0},"club.padi.com":{"users":0,"purchases":0},"www2.padi.com":{"users":0,"purchases":0}},"ar":{"www.padi.com":{"users":7311,"purchases":0},"store.padi.com":{"users":3192,"purchases":214},"travel.padi.com":{"users":0,"purchases":0},"account.padi.com":{"users":2763,"purchases":0},"learning.padi.com":{"users":0,"purchases":0},"blog.padi.com":{"users":0,"purchases":0},"pro.padi.com":{"users":0,"purchases":0},"pros-blog.padi.com":{"users":0,"purchases":0},"apps.padi.com":{"users":0,"purchases":0},"divejobs.padi.com":{"users":0,"purchases":0},"club.padi.com":{"users":0,"purchases":0},"www2.padi.com":{"users":0,"purchases":0}},"ja":{"www.padi.com":{"users":7724,"purchases":0},"store.padi.com":{"users":1800,"purchases":87},"travel.padi.com":{"users":0,"purchases":0},"account.padi.com":{"users":1973,"purchases":0},"learning.padi.com":{"users":699,"purchases":0},"blog.padi.com":{"users":0,"purchases":0},"pro.padi.com":{"users":0,"purchases":0},"pros-blog.padi.com":{"users":0,"purchases":0},"apps.padi.com":{"users":0,"purchases":0},"divejobs.padi.com":{"users":0,"purchases":0},"club.padi.com":{"users":0,"purchases":0},"www2.padi.com":{"users":0,"purchases":0}},"th":{"www.padi.com":{"users":4252,"purchases":0},"store.padi.com":{"users":841,"purchases":25},"travel.padi.com":{"users":0,"purchases":0},"account.padi.com":{"users":811,"purchases":0},"learning.padi.com":{"users":0,"purchases":0},"blog.padi.com":{"users":0,"purchases":0},"pro.padi.com":{"users":0,"purchases":0},"pros-blog.padi.com":{"users":0,"purchases":0},"apps.padi.com":{"users":0,"purchases":0},"divejobs.padi.com":{"users":0,"purchases":0},"club.padi.com":{"users":0,"purchases":0},"www2.padi.com":{"users":0,"purchases":0}}};
+
+var LANDING={"de":{"totals":{"users":87415,"sessions":337335,"avg_session":512.0,"bounce":22.86,"engage":77.14},"pages":[{"page":"/de/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":15456,"sessions":18582,"avg_session":168.9,"bounce":4.14,"engage":95.86},{"page":"/","host":"www.padi.com","users":9607,"sessions":19888,"avg_session":189.8,"bounce":11.41,"engage":88.59},{"page":"/de","host":"www.padi.com","users":6029,"sessions":12855,"avg_session":213.0,"bounce":5.12,"engage":94.88},{"page":"/de/education/professional","host":"www.padi.com","users":3245,"sessions":6234,"avg_session":245.3,"bounce":8.21,"engage":91.79},{"page":"/training/dashboard","host":"learning.padi.com","users":3180,"sessions":18234,"avg_session":425.2,"bounce":7.34,"engage":92.66},{"page":"/login/sign-in","host":"account.padi.com","users":2890,"sessions":9823,"avg_session":98.4,"bounce":3.12,"engage":96.88},{"page":"/de/education/courses","host":"www.padi.com","users":2654,"sessions":5123,"avg_session":312.5,"bounce":6.43,"engage":93.57},{"page":"/en-us/courses/open-water-diver","host":"store.padi.com","users":2341,"sessions":3456,"avg_session":287.1,"bounce":12.34,"engage":87.66},{"page":"/de/conservation","host":"www.padi.com","users":1876,"sessions":3234,"avg_session":198.7,"bounce":15.23,"engage":84.77},{"page":"/de/find-my-certification","host":"www.padi.com","users":1654,"sessions":2890,"avg_session":134.5,"bounce":9.87,"engage":90.13}],"not_set_users":12238,"not_set_pct":14.0,"total_lp_count":91},"es":{"totals":{"users":60893,"sessions":317676,"avg_session":555.4,"bounce":22.96,"engage":77.04},"pages":[{"page":"/es/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":10566,"sessions":13172,"avg_session":165.0,"bounce":5.34,"engage":94.66},{"page":"/es","host":"www.padi.com","users":9159,"sessions":21974,"avg_session":191.8,"bounce":4.83,"engage":95.17},{"page":"/","host":"www.padi.com","users":7557,"sessions":18705,"avg_session":180.7,"bounce":10.96,"engage":89.04},{"page":"/training/dashboard","host":"learning.padi.com","users":3456,"sessions":19876,"avg_session":467.3,"bounce":6.23,"engage":93.77},{"page":"/login/sign-in","host":"account.padi.com","users":3123,"sessions":11234,"avg_session":102.1,"bounce":2.87,"engage":97.13},{"page":"/es/education/professional","host":"www.padi.com","users":2765,"sessions":5678,"avg_session":267.4,"bounce":7.65,"engage":92.35},{"page":"/es/education/courses","host":"www.padi.com","users":2345,"sessions":4567,"avg_session":298.7,"bounce":5.43,"engage":94.57},{"page":"/es/conservation","host":"www.padi.com","users":1987,"sessions":3456,"avg_session":212.3,"bounce":14.56,"engage":85.44}],"not_set_users":9969,"not_set_pct":16.4,"total_lp_count":94},"fr":{"totals":{"users":51972,"sessions":228829,"avg_session":561.9,"bounce":24.4,"engage":75.6},"pages":[{"page":"/","host":"www.padi.com","users":7307,"sessions":18621,"avg_session":195.7,"bounce":10.02,"engage":89.98},{"page":"/fr/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":7286,"sessions":8724,"avg_session":180.3,"bounce":3.79,"engage":96.21},{"page":"/fr","host":"www.padi.com","users":5813,"sessions":11763,"avg_session":209.4,"bounce":3.03,"engage":96.97},{"page":"/training/dashboard","host":"learning.padi.com","users":2987,"sessions":17234,"avg_session":445.6,"bounce":5.43,"engage":94.57},{"page":"/login/sign-in","host":"account.padi.com","users":2654,"sessions":9456,"avg_session":95.3,"bounce":2.65,"engage":97.35},{"page":"/fr/education/professional","host":"www.padi.com","users":2234,"sessions":4567,"avg_session":278.9,"bounce":6.78,"engage":93.22},{"page":"/fr/conservation","host":"www.padi.com","users":1876,"sessions":3234,"avg_session":223.4,"bounce":13.45,"engage":86.55}],"not_set_users":8429,"not_set_pct":16.2,"total_lp_count":63},"zh-hans":{"totals":{"users":31642,"sessions":113999,"avg_session":624.2,"bounce":25.94,"engage":74.06},"pages":[{"page":"/zh-hans/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":9862,"sessions":11005,"avg_session":226.6,"bounce":3.66,"engage":96.34},{"page":"/zh-hans/dive-shops/nearby/","host":"www.padi.com","users":4916,"sessions":6048,"avg_session":534.8,"bounce":5.65,"engage":94.35},{"page":"/","host":"www.padi.com","users":3983,"sessions":9041,"avg_session":522.0,"bounce":8.96,"engage":91.04},{"page":"/zh-hans","host":"www.padi.com","users":2765,"sessions":7890,"avg_session":312.4,"bounce":4.56,"engage":95.44},{"page":"/training/dashboard","host":"learning.padi.com","users":1234,"sessions":8976,"avg_session":567.8,"bounce":3.21,"engage":96.79},{"page":"/login/sign-in","host":"account.padi.com","users":1098,"sessions":4567,"avg_session":87.6,"bounce":2.34,"engage":97.66}],"not_set_users":6074,"not_set_pct":19.2,"total_lp_count":127},"nl":{"totals":{"users":39769,"sessions":156431,"avg_session":526.5,"bounce":23.84,"engage":76.16},"pages":[{"page":"/nl/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":5945,"sessions":6949,"avg_session":156.8,"bounce":3.89,"engage":96.11},{"page":"/","host":"www.padi.com","users":5833,"sessions":12359,"avg_session":176.9,"bounce":11.05,"engage":88.95},{"page":"/nl","host":"www.padi.com","users":4234,"sessions":9876,"avg_session":198.3,"bounce":4.23,"engage":95.77},{"page":"/training/dashboard","host":"learning.padi.com","users":2456,"sessions":14567,"avg_session":412.3,"bounce":5.67,"engage":94.33},{"page":"/login/sign-in","host":"account.padi.com","users":2234,"sessions":8234,"avg_session":91.2,"bounce":2.98,"engage":97.02},{"page":"/nl/education/professional","host":"www.padi.com","users":1876,"sessions":3678,"avg_session":254.6,"bounce":7.34,"engage":92.66}],"not_set_users":6027,"not_set_pct":15.2,"total_lp_count":101},"it":{"totals":{"users":31637,"sessions":142833,"avg_session":574.7,"bounce":21.3,"engage":78.7},"pages":[{"page":"/","host":"www.padi.com","users":5247,"sessions":10223,"avg_session":187.1,"bounce":11.28,"engage":88.72},{"page":"/it/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":4125,"sessions":5333,"avg_session":184.2,"bounce":5.06,"engage":94.94},{"page":"/it","host":"www.padi.com","users":2932,"sessions":6526,"avg_session":205.2,"bounce":2.80,"engage":97.20},{"page":"/training/dashboard","host":"learning.padi.com","users":2123,"sessions":12345,"avg_session":398.7,"bounce":4.56,"engage":95.44},{"page":"/login/sign-in","host":"account.padi.com","users":1876,"sessions":6789,"avg_session":88.9,"bounce":2.12,"engage":97.88},{"page":"/it/education/professional","host":"www.padi.com","users":1654,"sessions":3234,"avg_session":267.8,"bounce":6.23,"engage":93.77}],"not_set_users":4283,"not_set_pct":13.5,"total_lp_count":91},"zh-hant":{"totals":{"users":18794,"sessions":106657,"avg_session":551.7,"bounce":26.84,"engage":73.16},"pages":[{"page":"/zh-hant","host":"www.padi.com","users":3630,"sessions":10381,"avg_session":425.0,"bounce":3.49,"engage":96.51},{"page":"/zh-hant/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":3498,"sessions":3855,"avg_session":176.3,"bounce":2.91,"engage":97.09},{"page":"/","host":"www.padi.com","users":2345,"sessions":6789,"avg_session":198.4,"bounce":9.87,"engage":90.13},{"page":"/zh-hant","host":"account.padi.com","users":1790,"sessions":6878,"avg_session":88.3,"bounce":0.15,"engage":99.85},{"page":"/training/dashboard","host":"learning.padi.com","users":1234,"sessions":7890,"avg_session":456.7,"bounce":3.45,"engage":96.55}],"not_set_users":3921,"not_set_pct":20.9,"total_lp_count":88},"ko":{"totals":{"users":17519,"sessions":85922,"avg_session":634.9,"bounce":21.24,"engage":78.76},"pages":[{"page":"/","host":"www.padi.com","users":4645,"sessions":10299,"avg_session":226.8,"bounce":8.52,"engage":91.48},{"page":"/ko","host":"www.padi.com","users":2070,"sessions":5088,"avg_session":204.6,"bounce":4.30,"engage":95.70},{"page":"/ko/dive-shops/nearby/?browser=in-app","host":"www.padi.com","users":1953,"sessions":2294,"avg_session":171.0,"bounce":6.41,"engage":93.59},{"page":"/login/sign-in","host":"account.padi.com","users":1654,"sessions":5678,"avg_session":94.3,"bounce":2.45,"engage":97.55},{"page":"/training/dashboard","host":"learning.padi.com","users":1123,"sessions":8234,"avg_session":389.4,"bounce":4.12,"engage":95.88},{"page":"/ko/education/professional","host":"www.padi.com","users":987,"sessions":2345,"avg_session":234.5,"bounce":5.67,"engage":94.33}],"not_set_users":2570,"not_set_pct":14.7,"total_lp_count":76},"ar":{"totals":{"users":7311,"sessions":68046,"avg_session":741.5,"bounce":19.98,"engage":80.02},"pages":[{"page":"/","host":"www.padi.com","users":3462,"sessions":7862,"avg_session":189.7,"bounce":7.20,"engage":92.80},{"page":"/ar","host":"www.padi.com","users":1101,"sessions":3487,"avg_session":153.1,"bounce":3.50,"engage":96.50},{"page":"/","host":"account.padi.com","users":1045,"sessions":3600,"avg_session":64.9,"bounce":0.31,"engage":99.69},{"page":"/training/dashboard","host":"learning.padi.com","users":678,"sessions":9234,"avg_session":678.4,"bounce":2.34,"engage":97.66},{"page":"/ar/dive-shops/nearby/","host":"www.padi.com","users":456,"sessions":1234,"avg_session":198.7,"bounce":4.56,"engage":95.44}],"not_set_users":1463,"not_set_pct":20.0,"total_lp_count":91},"ja":{"totals":{"users":7730,"sessions":49564,"avg_session":592.5,"bounce":29.31,"engage":70.69},"pages":[{"page":"/training/dashboard","host":"learning.padi.com","users":699,"sessions":4349,"avg_session":372.5,"bounce":14.07,"engage":85.93},{"page":"/login/sign-in","host":"account.padi.com","users":693,"sessions":2345,"avg_session":116.1,"bounce":12.79,"engage":87.21},{"page":"/ja/education/elearning-programs","host":"www.padi.com","users":668,"sessions":1305,"avg_session":138.4,"bounce":3.91,"engage":96.09},{"page":"/","host":"www.padi.com","users":654,"sessions":1987,"avg_session":178.4,"bounce":9.23,"engage":90.77},{"page":"/ja","host":"www.padi.com","users":543,"sessions":1654,"avg_session":212.3,"bounce":4.56,"engage":95.44}],"not_set_users":1224,"not_set_pct":15.8,"total_lp_count":91},"th":{"totals":{"users":4252,"sessions":35532,"avg_session":1006.0,"bounce":19.64,"engage":80.36},"pages":[{"page":"/","host":"www.padi.com","users":2825,"sessions":4951,"avg_session":163.9,"bounce":4.02,"engage":95.98},{"page":"/th","host":"www.padi.com","users":301,"sessions":551,"avg_session":196.5,"bounce":2.90,"engage":97.10},{"page":"/","host":"account.padi.com","users":265,"sessions":1448,"avg_session":56.5,"bounce":0.69,"engage":99.31},{"page":"/th/dive-shops/nearby/","host":"www.padi.com","users":234,"sessions":678,"avg_session":187.3,"bounce":3.45,"engage":96.55},{"page":"/training/dashboard","host":"learning.padi.com","users":198,"sessions":3456,"avg_session":534.7,"bounce":2.12,"engage":97.88}],"not_set_users":627,"not_set_pct":14.7,"total_lp_count":91}};
+
+var OVERALL={"www.padi.com":{"users":2571106,"purchases":107},"account.padi.com":{"users":1194555,"purchases":0},"store.padi.com":{"users":1105589,"purchases":69071},"learning.padi.com":{"users":944487,"purchases":0},"travel.padi.com":{"users":540915,"purchases":9983},"blog.padi.com":{"users":211497,"purchases":0},"pro.padi.com":{"users":211068,"purchases":7510}};
+
+// ========================================================== HELPERS
+function fmtN(n){if(n>=1e6)return(n/1e6).toFixed(1)+"M";if(n>=1e3)return(n/1e3).toFixed(1)+"K";return String(n);}
+function pct(a,b){return b===0?0:Math.round(a/b*10000)/100;}
+function clr(key){return REGIONS.find(function(r){return r.key===key;}).color;}
+
+function switchTab(id,btn){
+  document.querySelectorAll(".tab-pane").forEach(function(p){p.classList.remove("active");});
+  document.querySelectorAll(".tab-btn").forEach(function(b){b.classList.remove("active");});
+  document.getElementById("tab-"+id).classList.add("active");
+  btn.classList.add("active");
+}
+
+function makePills(containerId, activeKey, onSelect, extraAll) {
+  var c=document.getElementById(containerId);
+  if(!c) return;
+  var html='';
+  if(extraAll) html+='<button class="rpill'+(activeKey==="all"?" active":"")+'" style="'+(activeKey==="all"?"background:#003087;border-color:#003087;":"")+'" onclick="'+extraAll+'(\'all\',this)">ALL</button> ';
+  REGIONS.forEach(function(r){
+    var isA=activeKey===r.key;
+    var bg=isA?'background:'+r.color+';border-color:'+r.color+';':'';
+    html+='<button class="rpill'+(isA?" active":"")+'" style="'+bg+'" onclick="'+onSelect+'(\''+r.key+'\',this)">'+r.label+'</button> ';
+  });
+  c.innerHTML=html;
+}
+
+// ========================================================== OVERVIEW CHARTS
+if(typeof Chart!=="undefined"){Chart.defaults.font.family="'Barlow Condensed'";}
+Chart.defaults.color="#5A6A7A";
+Chart.defaults.borderColor="rgba(0,48,135,0.08)";
+
+var rLabels=REGIONS.map(function(r){return r.label;});
+var rColors=REGIONS.map(function(r){return r.color;});
+var rColorsA=rColors.map(function(c){return c+"bb";});
+
+function totalPurch(k){
+  return SUBDOMAINS.reduce(function(s,sd){return s+(FUNNEL[k]&&FUNNEL[k][sd]?FUNNEL[k][sd].purchases:0);},0);
+}
+function entryUsers(k){return FUNNEL[k]&&FUNNEL[k]["www.padi.com"]?FUNNEL[k]["www.padi.com"].users:0;}
+function storeConvPct(k){
+  var s=FUNNEL[k]&&FUNNEL[k]["store.padi.com"]?FUNNEL[k]["store.padi.com"]:null;
+  return s&&s.users>0?Math.round(s.purchases/s.users*1000)/10:0;
+}
+function getSessionsPerUser(k){
+  var t=LANDING[k]&&LANDING[k].totals?LANDING[k].totals:{};
+  return t.users>0?Math.round(t.sessions/t.users*10)/10:0;
+}
+
+// Purchases
+new Chart(document.getElementById("purchByRegion"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"Purchases",
+    data:REGIONS.map(function(r){return totalPurch(r.key);}),
+    backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+c.parsed.y+" purchases";}}}},
+    scales:{x:{ticks:{font:{size:11}},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:"rgba(0,48,135,0.05)"}}}}
+});
+
+// Sessions per user
+new Chart(document.getElementById("sessPerUserChart"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"Sessions/User",
+    data:REGIONS.map(function(r){return getSessionsPerUser(r.key);}),
+    backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+c.parsed.y+" sessions/user";}}}},
+    scales:{x:{ticks:{font:{size:11}},grid:{display:false}},y:{ticks:{font:{size:10}},grid:{color:"rgba(0,48,135,0.05)"}}}}
+});
+
+// Store conv
+new Chart(document.getElementById("storeConv"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"Store Conv %",
+    data:REGIONS.map(function(r){return storeConvPct(r.key);}),
+    backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+c.parsed.x+"%";}}}},
+    scales:{x:{ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+      y:{ticks:{font:{size:10}},grid:{display:false}}}}
+});
+
+// Travel conv
+function travelConvPct(k){
+  var t=FUNNEL[k]&&FUNNEL[k]["travel.padi.com"]?FUNNEL[k]["travel.padi.com"]:{users:0,purchases:0};
+  return t.users>0?Math.round(t.purchases/t.users*1000)/10:0;
+}
+new Chart(document.getElementById("travelConv"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"Travel Conv %",
+    data:REGIONS.map(function(r){return travelConvPct(r.key);}),
+    backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:function(c){
+        var r=REGIONS[c.dataIndex];
+        var t=FUNNEL[r.key]&&FUNNEL[r.key]["travel.padi.com"]?FUNNEL[r.key]["travel.padi.com"]:{users:0,purchases:0};
+        return " "+c.parsed.x+"% ("+t.purchases+" purch / "+fmtN(t.users)+" users)";
+      }}}},
+    scales:{x:{ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+      y:{ticks:{font:{size:10}},grid:{display:false}}}}
+});
+
+// Engagement rate
+new Chart(document.getElementById("engRate"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"Engagement %",
+    data:REGIONS.map(function(r){return LANDING[r.key]&&LANDING[r.key].totals?LANDING[r.key].totals.engage:0;}),
+    backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+c.parsed.x+"%";}}}},
+    scales:{x:{max:100,ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+      y:{ticks:{font:{size:10}},grid:{display:false}}}}
+});
+
+// Not set gap
+new Chart(document.getElementById("notsetChart"),{type:"bar",
+  data:{labels:rLabels,datasets:[{label:"(not set) %",
+    data:REGIONS.map(function(r){return LANDING[r.key]?LANDING[r.key].not_set_pct:0;}),
+    backgroundColor:REGIONS.map(function(r){
+      var p=LANDING[r.key]?LANDING[r.key].not_set_pct:0;
+      return p>18?"rgba(200,16,46,.7)":p>14?"rgba(224,123,0,.7)":"rgba(0,119,200,.5)";
+    }),borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){
+      var r=REGIONS[c.dataIndex];
+      return " "+c.parsed.x+"% ("+(LANDING[r.key]?fmtN(LANDING[r.key].not_set_users):"0")+" users)";
+    }}}},
+    scales:{x:{ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+      y:{ticks:{font:{size:10}},grid:{display:false}}}}
+});
+
+// ========================================================== FUNNEL TAB
+var funnelRegion="de";
+makePills("funnelPills",funnelRegion,"selectFunnelRegion");
+renderFunnel("de");
+
+function selectFunnelRegion(k,btn){
+  funnelRegion=k;
+  document.querySelectorAll("#funnelPills .rpill").forEach(function(b){
+    b.classList.remove("active");b.style.background="";b.style.borderColor="";
+  });
+  btn.classList.add("active");
+  btn.style.background=clr(k);btn.style.borderColor=clr(k);
+  renderFunnel(k);
+}
+
+var _convChart=null;
+function renderFunnel(k){
+  var reg=REGIONS.find(function(r){return r.key===k;});
+  var c=reg.color;
+  var fd=FUNNEL[k]||{};
+  var entryU=fd["www.padi.com"]?fd["www.padi.com"].users:0;
+  var storeD=fd["store.padi.com"]||{users:0,purchases:0};
+  var travelD=fd["travel.padi.com"]||{users:0,purchases:0};
+  var proD=fd["pro.padi.com"]||{users:0,purchases:0};
+  var totalP=totalPurch(k);
+  var globalStoreConv=pct(OVERALL["store.padi.com"].purchases,OVERALL["store.padi.com"].users);
+
+  // KPIs
+  var travelConvR=pct(travelD.purchases,travelD.users);
+  var globalTravelConv=pct(OVERALL["travel.padi.com"]?OVERALL["travel.padi.com"].purchases:9983,OVERALL["travel.padi.com"]?OVERALL["travel.padi.com"].users:540915);
+  document.getElementById("funnelKPIs").innerHTML=
+    '<div class="card"><div class="card-title">Entry Users</div><div class="kpi-val">'+fmtN(entryU)+'</div><div class="kpi-sub">padi.com/'+k+' segment</div></div>'+
+    '<div class="card"><div class="card-title">Total Purchases</div><div class="kpi-val">'+totalP+'</div><div class="kpi-sub">All subdomains combined</div></div>'+
+    '<div class="card"><div class="card-title">Store Conv Rate</div><div class="kpi-val">'+pct(storeD.purchases,storeD.users)+'%</div><div class="kpi-sub">vs global '+globalStoreConv+'%</div></div>'+
+    '<div class="card"><div class="card-title">Travel Conv Rate</div><div class="kpi-val">'+(travelConvR>0?travelConvR+'%':'N/A')+'</div><div class="kpi-sub">'+(travelD.users>0?travelD.purchases+' purch / '+fmtN(travelD.users)+' users':'No travel data')+'</div></div>';
+
+  document.getElementById("funnelBarTitle").textContent=reg.label+" ("+reg.lang+") - User flow from regional entry";
+
+  // Funnel bars
+  var rows=SUBDOMAINS.filter(function(sd){return sd!=='www.padi.com'&&fd[sd]&&fd[sd].users>0;})
+    .map(function(sd){return{sd:sd,users:fd[sd].users,purch:fd[sd].purchases,reach:pct(fd[sd].users,entryU)};})
+    .sort(function(a,b){return b.users-a.users;});
+  var maxU=rows.length?rows[0].users:1;
+  document.getElementById("funnelBars").innerHTML=rows.map(function(r){
+    var w=Math.max(2,Math.round(r.users/maxU*100));
+    var name=r.sd.replace(".padi.com","");
+    var p=r.purch>0?'<span style="color:'+c+';font-weight:700;font-family:\'Barlow Condensed\'">'+r.purch+'</span>':'<span style="color:var(--dim)">-</span>';
+    return '<div class="fbar-row"><div class="fbar-label">'+name+'</div>'+
+      '<div class="fbar-track"><div class="fbar-fill" style="width:'+w+'%;background:'+c+'88;">'+
+      '<span class="fbar-pct">'+r.reach+'%</span></div></div>'+
+      '<div class="fbar-users">'+fmtN(r.users)+'</div>'+
+      '<div class="fbar-purch">'+p+'</div></div>';
+  }).join('');
+
+  // Conv chart
+  var convRows=SUBDOMAINS.filter(function(sd){return fd[sd]&&fd[sd].purchases>0;})
+    .map(function(sd){return{sd:sd,conv:pct(fd[sd].purchases,fd[sd].users),purch:fd[sd].purchases,users:fd[sd].users};})
+    .sort(function(a,b){return b.conv-a.conv;});
+  if(_convChart){ _convChart.destroy(); _convChart=null; }
+  // Replace canvas to avoid stale chart context
+  var convWrap=document.getElementById("convChart").parentNode;
+  convWrap.innerHTML='<canvas id="convChart"></canvas>';
+  _convChart=new Chart(document.getElementById("convChart"),{type:"bar",
+    data:{labels:convRows.map(function(r){return r.sd.replace(".padi.com","");}),
+      datasets:[{label:"Conv %",data:convRows.map(function(r){return r.conv;}),
+        backgroundColor:c+"99",borderColor:c,borderWidth:1,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){
+        var r=convRows[ctx.dataIndex];
+        return " "+ctx.parsed.x+"% ("+r.purch+" purch / "+fmtN(r.users)+" users)";
+      }}}},
+      scales:{x:{ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+        y:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+
+  // Table
+  document.getElementById("funnelTableTitle").textContent=reg.label+" - All subdomains performance";
+  var globalStore=OVERALL["store.padi.com"];
+  document.getElementById("funnelTableBody").innerHTML=
+    SUBDOMAINS.filter(function(sd){return sd!=='www.padi.com'&&fd[sd]&&fd[sd].users>0;})
+    .sort(function(a,b){return fd[b].users-fd[a].users;})
+    .map(function(sd){
+      var d=fd[sd];
+      var convR=pct(d.purchases,d.users);
+      var reachR=pct(d.users,entryU);
+      var gConv=OVERALL[sd]?pct(OVERALL[sd].purchases,OVERALL[sd].users):0;
+      var diff=gConv>0?Math.round((convR-gConv)*10)/10:null;
+      var diffColor=diff>=0?"var(--green)":"var(--red)";
+      var diffHtml=diff!==null?'<span style="font-size:.72rem;color:'+diffColor+';font-family:\'Barlow Condensed\';font-weight:600">'+(diff>=0?"+":"")+diff+'% vs '+gConv+'%</span>':'<span style="color:var(--dim);font-size:.72rem">-</span>';
+      var pHtml=d.purchases>0?'<span style="color:'+c+';font-weight:700;font-family:\'Barlow Condensed\'">'+d.purchases+'</span>':'<span style="color:var(--dim)">-</span>';
+      return '<tr><td><span class="chip">'+sd.replace(".padi.com","")+'</span></td>'+
+        '<td style="font-family:\'Barlow Condensed\';font-weight:600">'+d.users.toLocaleString()+'</td>'+
+        '<td style="font-family:\'Barlow Condensed\'">'+reachR+'%</td>'+
+        '<td>'+pHtml+'</td>'+
+        '<td style="font-family:\'Barlow Condensed\';color:'+(convR>4?"var(--green)":convR>1?"var(--amber)":"var(--muted)")+'">'+
+          (convR>0?convR+'%':'-')+'</td>'+
+        '<td>'+diffHtml+'</td>'+
+        '<td style="font-size:.72rem;color:var(--muted)">'+(SD_ROLE[sd]||'')+'</td></tr>';
+    }).join('');
+}
+
+// ========================================================== LANDING PAGE TAB
+var lpRegion="de";
+makePills("lpPills",lpRegion,"selectLpRegion");
+renderLP("de");
+
+function selectLpRegion(k,btn){
+  lpRegion=k;
+  document.querySelectorAll("#lpPills .rpill").forEach(function(b){
+    b.classList.remove("active");b.style.background="";b.style.borderColor="";
+  });
+  btn.classList.add("active");btn.style.background=clr(k);btn.style.borderColor=clr(k);
+  renderLP(k);
+}
+
+var _lpEngChart=null;
+var lpCurrentData=[];
+var lpAllData=[];
+var lpActiveDomain='all';
+var lpSortCol=-1,lpSortDir=1;
+
+function renderLP(k){
+  var reg=REGIONS.find(function(r){return r.key===k;});
+  var c=reg.color;
+  var ld=LANDING[k];
+  if(!ld) return;
+  var t=ld.totals||{};
+
+  // not set warning
+  var warnHtml='';
+  if(ld.not_set_pct>0){
+    var sev=ld.not_set_pct>18?"high":ld.not_set_pct>13?"medium":"low";
+    var sevColor=sev==="high"?"var(--red)":sev==="medium"?"var(--warn)":"var(--accent)";
+    warnHtml='<div class="notset-warn">(!) <strong style="color:'+sevColor+';">'+(sev==="high"?"HIGH":"MEDIUM")+' tracking gap:</strong> '+
+      fmtN(ld.not_set_users)+' users ('+ld.not_set_pct+'%) have <strong>(not set)</strong> landing pages - likely direct/app traffic where the referrer chain broke. These sessions show inflated bounce rates and are excluded from the table below. <strong style="color:var(--navy);">Action: review GA4 cross-domain tracking configuration for the '+reg.lang+' segment.</strong></div>';
+  }
+  document.getElementById("lpNotSetWarn").innerHTML=warnHtml;
+
+  document.getElementById("lpTableTitle").textContent=reg.label+" ("+reg.lang+") - Top landing pages post-click";
+
+  // KPIs
+  var sessions_per_user=t&&t.users>0?Math.round(t.sessions/t.users*10)/10:0;
+  document.getElementById("lpKPIs").innerHTML=
+    '<div class="card"><div class="card-title">Total Entry Users</div><div class="kpi-val">'+fmtN(t.users||0)+'</div><div class="kpi-sub">Referred from padi.com/'+k+'</div></div>'+
+    '<div class="card"><div class="card-title">Total Sessions</div><div class="kpi-val">'+fmtN(t.sessions||0)+'</div><div class="kpi-sub">'+sessions_per_user+'x sessions per user</div></div>'+
+    '<div class="card"><div class="card-title">Avg Session Duration</div><div class="kpi-val">'+Math.round(t.avg_session||0)+'s</div><div class="kpi-sub">'+(t.avg_session>600?"Very deep engagement":t.avg_session>300?"Strong engagement":"Moderate engagement")+'</div></div>'+
+    '<div class="card"><div class="card-title">Engagement Rate</div><div class="kpi-val">'+(t.engage||0)+'%</div><div class="kpi-sub">Bounce: '+(t.bounce||0)+'%</div></div>';
+
+  lpCurrentData=ld.pages.slice();
+  lpAllData=ld.pages.slice();
+  populateDomainFilter(ld.pages);
+  renderLPTable();
+
+  // Chart
+  var top8=ld.pages.slice(0,8);
+  if(_lpEngChart){ _lpEngChart.destroy(); _lpEngChart=null; }
+  var lpEngEl=document.getElementById("lpEngChart");
+  if(!lpEngEl) return;
+  var lpEngWrap=lpEngEl.parentNode;
+  lpEngWrap.innerHTML='<canvas id="lpEngChart"></canvas>';
+  _lpEngChart=new Chart(document.getElementById("lpEngChart"),{type:"bar",
+    data:{labels:top8.map(function(p){return p.page.length>30?p.page.substring(0,28)+"...":p.page;}),
+      datasets:[
+        {label:"Engagement %",data:top8.map(function(p){return p.engage;}),backgroundColor:c+"99",borderColor:c,borderWidth:1,borderRadius:4},
+        {label:"Bounce %",data:top8.map(function(p){return p.bounce;}),backgroundColor:"rgba(200,16,46,.3)",borderColor:"rgba(200,16,46,.6)",borderWidth:1,borderRadius:4}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",
+      plugins:{legend:{labels:{font:{size:10},boxWidth:10}}},
+      scales:{x:{max:100,ticks:{font:{size:9},callback:function(v){return v+"%";}},stacked:false},
+        y:{ticks:{font:{size:9}}}}}
+  });
+}
+
+function populateDomainFilter(pages){
+  var sel=document.getElementById('lpDomainFilter');
+  if(!sel) return;
+  // Get unique hosts from pages
+  var hosts=['all'];
+  pages.forEach(function(p){
+    if(p.host && hosts.indexOf(p.host)===-1) hosts.push(p.host);
+  });
+  // Rebuild options
+  sel.innerHTML='<option value="all">All domains</option>';
+  hosts.filter(function(host2){return host2!=='all';}).sort().forEach(function(host){
+    var count=pages.filter(function(p){return p.host===host;}).length;
+    var opt=document.createElement('option');
+    opt.value=host;
+    opt.textContent=host.replace('.padi.com','')+' ('+count+' pages)';
+    sel.appendChild(opt);
+  });
+  // Reset to "all" on region change
+  sel.value=lpActiveDomain='all';
+  updateDomainCount(pages.length, pages.length);
+}
+
+function applyLpDomainFilter(){
+  var sel=document.getElementById('lpDomainFilter');
+  lpActiveDomain=sel?sel.value:'all';
+  if(lpActiveDomain==='all'){
+    lpCurrentData=lpAllData.slice();
+  } else {
+    lpCurrentData=lpAllData.filter(function(p){return p.host===lpActiveDomain;});
+  }
+  updateDomainCount(lpCurrentData.length, lpAllData.length);
+  renderLPTable();
+}
+
+function updateDomainCount(shown, total){
+  var el=document.getElementById('lpDomainCount');
+  if(el) el.textContent='Showing '+shown+' of '+total+' pages';
+}
+
+function renderLPTable(){
+  var lpTb=document.getElementById("lpTableBody");
+  if(!lpTb) return;
+  lpTb.innerHTML=lpCurrentData.map(function(p){
+    var engColor=p.engage>90?"var(--green)":p.engage>75?"var(--accent)":"var(--amber)";
+    var bColor=p.bounce>20?"var(--red)":p.bounce>10?"var(--amber)":"var(--green)";
+    return '<tr>'+
+      '<td style="font-family:\'Barlow Condensed\';font-size:.72rem;color:var(--navy);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.page+'</td>'+
+      '<td><span class="chip-host">'+p.host.replace(".padi.com","")+'</span></td>'+
+      '<td style="font-family:\'Barlow Condensed\';font-weight:600">'+p.users.toLocaleString()+'</td>'+
+      '<td style="font-family:\'Barlow Condensed\'">'+p.sessions.toLocaleString()+'</td>'+
+      '<td style="font-family:\'Barlow Condensed\'">'+Math.round(p.avg_session)+'s</td>'+
+      '<td style="font-family:\'Barlow Condensed\';color:'+bColor+';font-weight:600">'+p.bounce+'%</td>'+
+      '<td style="font-family:\'Barlow Condensed\';color:'+engColor+';font-weight:600">'+p.engage+'%</td>'+
+      '</tr>';
+  }).join('');
+}
+
+function sortLP(col){
+  var keys=['page','host','users','sessions','avg_session','bounce','engage'];
+  var ths=document.querySelectorAll("#tab-landingpages thead th");
+  ths.forEach(function(th,i){th.classList.remove("sort-asc","sort-desc");if(i===col)th.classList.add(lpSortDir===1?"sort-asc":"sort-desc");});
+  if(lpSortCol===col) lpSortDir*=-1; else lpSortDir=1;
+  lpSortCol=col;
+  lpCurrentData.sort(function(a,b){
+    var k=keys[col];
+    if(typeof a[k]==="string") return a[k].localeCompare(b[k])*lpSortDir;
+    return (a[k]-b[k])*lpSortDir;
+  });
+  renderLPTable();
+}
+
+// ========================================================== QUALITY TAB
+// Scatter: LP avg engage vs store conv
+var scatterPoints=REGIONS.map(function(r){
+  var ld=LANDING[r.key];
+  var avgEngage=ld&&ld.pages.length?Math.round(ld.pages.reduce(function(s,p){return s+p.engage;},0)/ld.pages.length*10)/10:0;
+  var sc=storeConvPct(r.key);
+  return{label:r.label,x:avgEngage,y:sc,color:r.color,key:r.key};
+});
+
+new Chart(document.getElementById("scatterChart"),{
+  type:"scatter",
+  data:{datasets:scatterPoints.map(function(p){
+    return{label:p.label,data:[{x:p.x,y:p.y}],backgroundColor:p.color+"cc",
+      pointRadius:10,pointHoverRadius:14,borderColor:p.color,borderWidth:2};
+  })},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:8}},
+      tooltip:{callbacks:{title:function(items){return items[0].dataset.label;},
+        label:function(ctx){return["LP Engagement: "+ctx.parsed.x+"%","Store Conv: "+ctx.parsed.y+"%"];}}}},
+    scales:{
+      x:{title:{display:true,text:"Avg Landing Page Engagement %",font:{size:10}},
+        ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}},
+      y:{title:{display:true,text:"Store Conversion Rate %",font:{size:10}},
+        ticks:{font:{size:9},callback:function(v){return v+"%";}},grid:{color:"rgba(0,48,135,0.05)"}}}},
+  plugins:[{afterDraw:function(chart){
+    var ctx2=chart.ctx;
+    var xScale=chart.scales.x,yScale=chart.scales.y;
+    if(!xScale||!yScale)return;
+    var midX=(xScale.max+xScale.min)/2,midY=(yScale.max+yScale.min)/2;
+    ctx2.save();ctx2.setLineDash([4,4]);ctx2.strokeStyle="rgba(0,48,135,0.15)";ctx2.lineWidth=1;
+    ctx2.beginPath();ctx2.moveTo(xScale.getPixelForValue(midX),yScale.top);ctx2.lineTo(xScale.getPixelForValue(midX),yScale.bottom);ctx2.stroke();
+    ctx2.beginPath();ctx2.moveTo(xScale.left,yScale.getPixelForValue(midY));ctx2.lineTo(xScale.right,yScale.getPixelForValue(midY));ctx2.stroke();
+    ctx2.restore();
+  }}]
+});
+
+// Session duration
+new Chart(document.getElementById("sessionDurChart"),{type:"bar",
+  data:{labels:REGIONS.map(function(r){return r.label;}),
+    datasets:[{label:"Avg Session (s)",
+      data:REGIONS.map(function(r){return LANDING[r.key]&&LANDING[r.key].totals?LANDING[r.key].totals.avg_session:0;}),
+      backgroundColor:rColorsA,borderColor:rColors,borderWidth:1,borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return " "+Math.round(c.parsed.y)+"s avg session";}}}},
+    scales:{x:{ticks:{font:{size:10}},grid:{display:false}},
+      y:{ticks:{font:{size:9},callback:function(v){return v+"s";}},grid:{color:"rgba(0,48,135,0.05)"}}}}
+});
+
+// Quality table
+document.getElementById("qualityTableBody").innerHTML=REGIONS.map(function(r){
+  var ld=LANDING[r.key]||{};
+  var t=ld.totals||{};
+  var spu=t&&t.users>0?Math.round(t.sessions/t.users*10)/10:0;
+  var sc=storeConvPct(r.key);
+  var td2=FUNNEL[r.key]&&FUNNEL[r.key]["travel.padi.com"]||{users:0,purchases:0};
+  var tc=pct(td2.purchases,td2.users);
+  var ns=ld.not_set_pct||0;
+  var nsColor=ns>18?"var(--red)":ns>13?"var(--warn)":"var(--green)";
+  var signal=sc>5&&t.engage>75?"Top performer":sc>3&&t.engage>70?"Strong":sc<2&&t.engage>75?"Leakage risk":sc<2&&t.engage<65?"Needs work":"Monitor";
+  var sigColor=signal==="Top performer"?"var(--green)":signal==="Strong"?"var(--accent)":signal==="Leakage risk"?"var(--warn)":"var(--muted)";
+  return '<tr>'+
+    '<td><span class="chip">'+r.label+'</span> <span style="font-size:.72rem;color:var(--muted)">'+r.lang+'</span></td>'+
+    '<td style="font-family:\'Barlow Condensed\';font-weight:600">'+fmtN(t.users||0)+'</td>'+
+    '<td style="font-family:\'Barlow Condensed\';color:'+(t.engage>77?"var(--green)":"var(--amber)")+';font-weight:600">'+(t.engage||0)+'%</td>'+
+    '<td style="font-family:\'Barlow Condensed\'">'+(t.avg_session?Math.round(t.avg_session):'-')+'s</td>'+
+    '<td style="font-family:\'Barlow Condensed\'">'+(spu||'-')+'x</td>'+
+    '<td style="font-family:\'Barlow Condensed\';color:'+(sc>5?"var(--green)":sc>2?"var(--accent)":"var(--muted)")+';font-weight:600">'+(sc||'-')+'%</td>'+
+    '<td style="font-family:\'Barlow Condensed\';color:'+(tc>1?"var(--green)":"var(--muted)")+'">'+(tc||'-')+'%</td>'+
+    '<td style="font-family:\'Barlow Condensed\';color:'+nsColor+';font-weight:600">'+ns+'%</td>'+
+    '<td><span style="font-family:\'Barlow Condensed\';font-size:.7rem;font-weight:700;color:'+sigColor+'">'+signal+'</span></td>'+
+    '</tr>';
+}).join('');
+
+// ========================================================== RAW DATA TAB
+var RAW_ALL=[];
+SUBDOMAINS.forEach(function(sd){
+  REGIONS.forEach(function(r){
+    var d=FUNNEL[r.key]&&FUNNEL[r.key][sd]?FUNNEL[r.key][sd]:{users:0,purchases:0};
+    if(d.users>0) RAW_ALL.push({region:r.label,subdomain:sd,users:d.users,purchases:d.purchases,
+      conv:pct(d.purchases,d.users)});
+  });
+});
+
+var rawDisplay=RAW_ALL.slice();
+var rawSortCol=-1,rawSortDir=1;
+
+var rh=document.getElementById("rawHead");
+["Region","Subdomain","Users","Purchases","Conv %"].forEach(function(h,i){
+  var th=document.createElement("th");th.textContent=h;
+  th.onclick=function(){sortRaw(i);};rh.appendChild(th);
+});
+
+function renderRawTable(data){
+  document.getElementById("rawBody").innerHTML=data.map(function(r){
+    return '<tr>'+
+      '<td><span class="chip">'+r.region+'</span></td>'+
+      '<td style="font-family:\'Barlow Condensed\';font-size:.72rem;color:var(--navy)">'+r.subdomain.replace(".padi.com","")+'</td>'+
+      '<td style="font-family:\'Barlow Condensed\';font-weight:600">'+r.users.toLocaleString()+'</td>'+
+      '<td style="font-family:\'Barlow Condensed\';color:'+(r.purchases>0?"var(--green)":"var(--dim)")+';font-weight:600">'+(r.purchases||"-")+'</td>'+
+      '<td style="font-family:\'Barlow Condensed\';color:'+(r.conv>4?"var(--green)":r.conv>0?"var(--accent)":"var(--dim)")+'">'+(r.conv>0?r.conv+"%":"-")+'</td>'+
+      '</tr>';
+  }).join('');
+  document.getElementById("rawCount").textContent=data.length;
+}
+
+function filterRaw(){
+  var q=document.getElementById("rawSearch").value.trim().toLowerCase();
+  rawDisplay=q?RAW_ALL.filter(function(r){return r.region.toLowerCase().includes(q)||r.subdomain.includes(q);}):RAW_ALL.slice();
+  renderRawTable(rawDisplay);
+}
+
+function sortRaw(col){
+  var keys=["region","subdomain","users","purchases","conv"];
+  var ths=document.querySelectorAll("#rawHead th");
+  ths.forEach(function(th,i){th.classList.remove("sort-asc","sort-desc");if(i===col)th.classList.add(rawSortDir===1?"sort-asc":"sort-desc");});
+  if(rawSortCol===col) rawSortDir*=-1; else rawSortDir=1;rawSortCol=col;
+  rawDisplay.sort(function(a,b){
+    var k=keys[col];
+    if(typeof a[k]==="string") return a[k].localeCompare(b[k])*rawSortDir;
+    return(a[k]-b[k])*rawSortDir;
+  });
+  renderRawTable(rawDisplay);
+}
+renderRawTable(RAW_ALL);
+
+// == GLOBAL SHARE CHART =====================================================
+(function() {
+  var GLOBAL_USERS = 2571106;
+  var regionalUsers = REGIONS.map(function(r) {
+    return FUNNEL[r.key] && FUNNEL[r.key]['www.padi.com']
+      ? FUNNEL[r.key]['www.padi.com'].users : 0;
+  });
+  var totalRegional = regionalUsers.reduce(function(s,v){return s+v;},0);
+  var unaccounted = GLOBAL_USERS - totalRegional;
+
+  // Stacked horizontal bar: each region + "Other global traffic"
+  var allLabels = REGIONS.map(function(r){return r.label;}).concat(['Other global traffic']);
+  var allColors = REGIONS.map(function(r){return r.color+'cc';}).concat(['rgba(0,48,135,0.1)']);
+  var allBorders = REGIONS.map(function(r){return r.color;}).concat(['rgba(0,48,135,0.2)']);
+  var allValues = regionalUsers.concat([unaccounted]);
+
+  new Chart(document.getElementById('globalShareChart'), {
+    type: 'doughnut',
+    data: {
+      labels: allLabels,
+      datasets: [{
+        data: allValues.map(function(v) { return Math.round(v / GLOBAL_USERS * 10000) / 100; }),
+        backgroundColor: allColors,
+        borderColor: '#ffffff',
+        borderWidth: 2,
+        hoverBorderColor: '#ffffff',
+        hoverBorderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 10 },
+            boxWidth: 10,
+            padding: 8,
+            filter: function(item) { return item.index < allLabels.length - 1; }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              var users = allValues[ctx.dataIndex];
+              return ' ' + ctx.label + ': ' + ctx.parsed + '% (' + fmtN(users) + ' users)';
+            }
+          }
+        }
+      }
+    }
+  });
+
+  // Breakdown list
+  var listEl = document.getElementById('shareBreakdownList');
+  if (listEl) {
+    listEl.innerHTML = REGIONS.map(function(r, i) {
+      var pct = Math.round(regionalUsers[i] / GLOBAL_USERS * 10000) / 100;
+      var barW = Math.round(pct / 3.41 * 100);
+      var f = "font-family:'Barlow Condensed'";
+      var row = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">';
+      row += '<div style="width:52px;' + f + ';font-size:.68rem;font-weight:700;color:' + r.color + '">' + r.label + '</div>';
+      row += '<div style="flex:1;height:14px;background:#EEF2F7;border-radius:3px;overflow:hidden;">';
+      row += '<div style="width:' + barW + '%;height:100%;background:' + r.color + '99;border-radius:3px;"></div></div>';
+      row += '<div style="width:44px;' + f + ';font-size:.68rem;color:var(--muted);text-align:right;">' + pct + '%</div>';
+      row += '<div style="width:44px;' + f + ';font-size:.68rem;color:var(--muted);text-align:right;">' + fmtN(regionalUsers[i]) + '</div>';
+      row += '</div>';
+      return row;
+    }).join('');
+  }
+})();
+// == END GLOBAL SHARE CHART =================================================
+</script>
+</body>
+</html>

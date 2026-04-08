@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI Ecosystem Traffic Flow</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ocean-deep: #020d1a;
+    --ocean-mid: #041e36;
+    --ocean-surface: #062e52;
+    --biolum-cyan: #00e5ff;
+    --biolum-blue: #2979ff;
+    --coral-accent: #ff6b35;
+    --seafoam: #00bfa5;
+    --sand: #f0e6d3;
+    --text-primary: #e8f4fd;
+    --text-muted: #7eb8d4;
+  }
+
+  body {
+    background: var(--ocean-deep);
+    font-family: 'Syne', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated ocean background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 80%, rgba(0,229,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 20%, rgba(41,121,255,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse 100% 60% at 50% 100%, rgba(0,191,165,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  header {
+    margin-bottom: 48px;
+  }
+
+  .eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--biolum-cyan);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  h1 {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 800;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #e8f4fd 0%, var(--biolum-cyan) 50%, var(--biolum-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 400;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 48px;
+    padding: 20px 28px;
+    background: rgba(4, 30, 54, 0.8);
+    border: 1px solid rgba(0,229,255,0.12);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--biolum-cyan);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .stat-divider {
+    width: 1px;
+    background: rgba(0,229,255,0.12);
+    align-self: stretch;
+  }
+
+  /* Main diagram area */
+  .diagram-wrapper {
+    background: rgba(4, 30, 54, 0.6);
+    border: 1px solid rgba(0,229,255,0.1);
+    border-radius: 16px;
+    padding: 32px;
+    backdrop-filter: blur(8px);
+    margin-bottom: 32px;
+  }
+
+  .diagram-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  #sankey-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Source labels */
+  .source-label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    fill: var(--text-primary);
+  }
+
+  .dest-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    fill: var(--text-muted);
+  }
+
+  .dest-label-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    fill: var(--biolum-cyan);
+    font-weight: 500;
+  }
+
+  .node-rect {
+    rx: 4;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: rgba(2, 13, 26, 0.97);
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 100;
+    min-width: 180px;
+  }
+
+  .tooltip.visible { opacity: 1; }
+  .tooltip-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 6px; color: var(--biolum-cyan); }
+  .tooltip-row { display: flex; justify-content: space-between; gap: 16px; color: var(--text-muted); }
+  .tooltip-row span:last-child { color: var(--text-primary); font-weight: 500; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 0 4px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Source tabs */
+  .source-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border: 1px solid rgba(0,229,255,0.2);
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+  }
+
+  .tab:hover {
+    border-color: rgba(0,229,255,0.4);
+    color: var(--text-primary);
+  }
+
+  .tab.active {
+    background: rgba(0,229,255,0.12);
+    border-color: var(--biolum-cyan);
+    color: var(--biolum-cyan);
+  }
+
+  /* Annotation */
+  .insight-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .insight-card {
+    padding: 18px 20px;
+    background: rgba(4, 30, 54, 0.7);
+    border: 1px solid rgba(0,229,255,0.08);
+    border-radius: 10px;
+    border-left: 3px solid var(--biolum-cyan);
+  }
+
+  .insight-card.coral { border-left-color: var(--coral-accent); }
+  .insight-card.seafoam { border-left-color: var(--seafoam); }
+
+  .insight-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .insight-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .insight-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-in { animation: fadeIn 0.5s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="eyebrow">CRO &amp; Analytics · Traffic Flow Analysis</div>
+    <h1>PADI Discovery Engine<br>Traffic Distribution</h1>
+    <p class="subtitle">How three discovery platforms route users across the PADI digital ecosystem — revealing conversion pathways and audience behavior patterns.</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-value" id="stat-total">316,628</span>
+      <span class="stat-label">Total Users Routed</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">3</span>
+      <span class="stat-label">Discovery Sources</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">30+</span>
+      <span class="stat-label">Destination Domains</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value" id="stat-top">www.padi.com</span>
+      <span class="stat-label">Top Destination</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat">
+      <span class="stat-value">34.2%</span>
+      <span class="stat-label">Blog → pro.padi.com</span>
+    </div>
+  </div>
+
+  <div class="diagram-wrapper">
+    <div class="diagram-title">// Sankey Flow — Discovery Sources → PADI Ecosystem Destinations</div>
+    <div class="source-tabs">
+      <button class="tab active" onclick="setView('all')">All Sources</button>
+      <button class="tab" onclick="setView('scuba')">Scubadiving.com</button>
+      <button class="tab" onclick="setView('blog')">Blog.padi.com</button>
+      <button class="tab" onclick="setView('pros')">Pros-blog.padi.com</button>
+    </div>
+    <div id="chart-container"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#00e5ff"></div>Scubadiving.com</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2979ff"></div>Blog.padi.com</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00bfa5"></div>Pros-blog.padi.com</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.15)"></div>Destination Node</div>
+  </div>
+
+  <div class="insight-bar">
+    <div class="insight-card">
+      <div class="insight-label">🏆 Top Traffic Driver</div>
+      <div class="insight-value">81,069 users</div>
+      <div class="insight-desc">Blog.padi.com sends the most users to www.padi.com — the single largest flow in the entire ecosystem.</div>
+    </div>
+    <div class="insight-card coral">
+      <div class="insight-label">✈️ Travel Funnel</div>
+      <div class="insight-value">54,162 users</div>
+      <div class="insight-desc">Blog + Pros-blog together drive 54K users to travel.padi.com — a major conversion pathway worth optimising.</div>
+    </div>
+    <div class="insight-card seafoam">
+      <div class="insight-label">👷 Pro Pathway</div>
+      <div class="insight-value">21,332 users</div>
+      <div class="insight-desc">Pros-blog.padi.com funnels the majority of its traffic (55.8%) directly to pro.padi.com — highly targeted audience.</div>
+    </div>
+    <div class="insight-card" style="border-left-color:#ff9800">
+      <div class="insight-label">⚠️ CRO Opportunity</div>
+      <div class="insight-value">learning.padi.com</div>
+      <div class="insight-desc">Despite massive Blog traffic (248K users), only 753 reach learning.padi.com — a significant education conversion gap.</div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-title" id="tt-title"></div>
+  <div class="tooltip-row"><span>Users</span><span id="tt-users"></span></div>
+  <div class="tooltip-row"><span>% of Source</span><span id="tt-pct"></span></div>
+</div>
+
+<script>
+const DATA = {
+  scuba: {
+    source: 'Scubadiving.com',
+    color: '#00e5ff',
+    total: 16224,
+    flows: [
+      { dest: 'store.padi.com', users: 6746, category: 'commerce' },
+      { dest: 'www.padi.com', users: 5741, category: 'main' },
+      { dest: 'travel.padi.com', users: 1280, category: 'travel' },
+      { dest: 'account.padi.com', users: 1167, category: 'account' },
+      { dest: 'learning.padi.com', users: 489, category: 'learning' },
+      { dest: 'blog.padi.com', users: 417, category: 'content' },
+      { dest: 'pro.padi.com', users: 81, category: 'pro' },
+      { dest: 'pros-blog.padi.com', users: 74, category: 'content' },
+      { dest: 'club.padi.com', users: 57, category: 'community' },
+      { dest: 'underseajournal.padi.com', users: 32, category: 'content' },
+      { dest: 'apps.padi.com', users: 27, category: 'apps' },
+      { dest: 'subs.padi.com', users: 21, category: 'subs' },
+      { dest: 'divejobs.padi.com', users: 16, category: 'pro' },
+      { dest: 'shop.padi.com', users: 15, category: 'commerce' },
+      { dest: 'preferences.padi.com', users: 13, category: 'account' },
+    ]
+  },
+  blog: {
+    source: 'Blog.padi.com',
+    color: '#2979ff',
+    total: 248854,
+    flows: [
+      { dest: 'www.padi.com', users: 81069, category: 'main' },
+      { dest: 'travel.padi.com', users: 53528, category: 'travel' },
+      { dest: 'store.padi.com', users: 46026, category: 'commerce' },
+      { dest: 'pros-blog.padi.com', users: 34194, category: 'content' },
+      { dest: 'pro.padi.com', users: 21680, category: 'pro' },
+      { dest: 'divejobs.padi.com', users: 4626, category: 'pro' },
+      { dest: 'account.padi.com', users: 2673, category: 'account' },
+      { dest: 'apps.padi.com', users: 766, category: 'apps' },
+      { dest: 'www.padi.com.cn', users: 760, category: 'intl' },
+      { dest: 'learning.padi.com', users: 753, category: 'learning' },
+      { dest: 'elearning.padi.com', users: 622, category: 'learning' },
+      { dest: 'underseajournal.padi.com', users: 543, category: 'content' },
+      { dest: 'www.padi.co.kr', users: 179, category: 'intl' },
+      { dest: 'dive.padi.co.jp', users: 152, category: 'intl' },
+      { dest: 'www2.padi.com', users: 88, category: 'main' },
+      { dest: 'affiliates.padi.com', users: 81, category: 'pro' },
+      { dest: 'www.diveagainstdebris.org', users: 71, category: 'charity' },
+      { dest: 'www.padi.com.tw', users: 18, category: 'intl' },
+      { dest: 'shop.padi.com', users: 10, category: 'commerce' },
+      { dest: 'live-unfiltered.padi.com', users: 8, category: 'content' },
+      { dest: 'securetravel.padi.com', users: 2, category: 'travel' },
+    ]
+  },
+  pros: {
+    source: 'Pros-blog.padi.com',
+    color: '#00bfa5',
+    total: 38220,
+    flows: [
+      { dest: 'pro.padi.com', users: 21332, category: 'pro' },
+      { dest: 'www.padi.com', users: 9545, category: 'main' },
+      { dest: 'divejobs.padi.com', users: 1954, category: 'pro' },
+      { dest: 'account.padi.com', users: 1708, category: 'account' },
+      { dest: 'store.padi.com', users: 1622, category: 'commerce' },
+      { dest: 'travel.padi.com', users: 634, category: 'travel' },
+      { dest: 'underseajournal.padi.com', users: 543, category: 'content' },
+      { dest: 'learning.padi.com', users: 129, category: 'learning' },
+      { dest: 'blog.padi.com', users: 119, category: 'content' },
+      { dest: 'www2.padi.com', users: 88, category: 'main' },
+      { dest: 'affiliates.padi.com', users: 81, category: 'pro' },
+      { dest: 'www.diveagainstdebris.org', users: 31, category: 'charity' },
+      { dest: 'apps.padi.com', users: 3, category: 'apps' },
+    ]
+  }
+};
+
+const CATEGORY_COLORS = {
+  commerce: '#ff6b35',
+  main: '#7c4dff',
+  travel: '#00b0ff',
+  account: '#ffd740',
+  learning: '#69f0ae',
+  content: '#ff80ab',
+  pro: '#40c4ff',
+  community: '#b388ff',
+  apps: '#84ffff',
+  subs: '#ccff90',
+  intl: '#ff6e40',
+  charity: '#ea80fc'
+};
+
+let currentView = 'all';
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  renderChart();
+}
+
+function renderChart() {
+  const container = document.getElementById('chart-container');
+  container.innerHTML = '';
+
+  const sources = currentView === 'all' 
+    ? [DATA.scuba, DATA.blog, DATA.pros]
+    : [DATA[currentView === 'scuba' ? 'scuba' : currentView === 'blog' ? 'blog' : 'pros']];
+
+  // Collect all destinations and aggregate
+  const destMap = new Map();
+  sources.forEach(src => {
+    src.flows.forEach(f => {
+      if (!destMap.has(f.dest)) {
+        destMap.set(f.dest, { users: 0, sources: [], category: f.category });
+      }
+      const d = destMap.get(f.dest);
+      d.users += f.users;
+      d.sources.push({ source: src.source, color: src.color, users: f.users });
+    });
+  });
+
+  // Sort destinations by total users
+  const dests = Array.from(destMap.entries())
+    .sort((a, b) => b[1].users - a[1].users)
+    .slice(0, currentView === 'all' ? 18 : 15);
+
+  // SVG dimensions
+  const W = container.offsetWidth || 1100;
+  const H = Math.max(600, dests.length * 38 + 120);
+  const MARGIN = { top: 20, right: 220, bottom: 20, left: 200 };
+  const innerH = H - MARGIN.top - MARGIN.bottom;
+  const innerW = W - MARGIN.left - MARGIN.right;
+
+  const svg = d3.select('#chart-container')
+    .append('svg')
+    .attr('id', 'sankey-svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
+
+  // Source totals
+  const srcTotals = sources.map(s => ({
+    ...s,
+    displayTotal: s.flows.reduce((a, f) => a + f.users, 0)
+  }));
+  const grandTotal = srcTotals.reduce((a, s) => a + s.displayTotal, 0);
+
+  // Y positions for sources
+  const srcGap = 20;
+  const srcBarH = srcTotals.map(s => (s.displayTotal / grandTotal) * (innerH - srcGap * (srcTotals.length - 1)));
+  let srcY = [];
+  let cum = 0;
+  srcTotals.forEach((s, i) => {
+    srcY.push(MARGIN.top + cum);
+    cum += srcBarH[i] + srcGap;
+  });
+
+  // Y positions for destinations
+  const destGap = 6;
+  const destTotal = dests.reduce((a, [, d]) => a + d.users, 0);
+  const destBarH = dests.map(([, d]) => Math.max(12, (d.users / destTotal) * (innerH - destGap * (dests.length - 1))));
+  let destY = [];
+  cum = 0;
+  dests.forEach((_, i) => {
+    destY.push(MARGIN.top + cum);
+    cum += destBarH[i] + destGap;
+  });
+
+  const srcX = MARGIN.left;
+  const destX = MARGIN.left + innerW;
+  const BAR_W = 14;
+
+  // Draw flows (paths)
+  const flowGroup = svg.append('g').attr('class', 'flows');
+
+  // Track vertical progress within each source and dest
+  const srcProgress = srcTotals.map(() => 0);
+  const destProgress = dests.map(() => 0);
+
+  dests.forEach(([destName, destData], di) => {
+    destData.sources.forEach(srcFlow => {
+      const si = srcTotals.findIndex(s => s.source === srcFlow.source);
+      if (si === -1) return;
+
+      const srcFrac = srcFlow.users / srcTotals[si].displayTotal;
+      const destFrac = srcFlow.users / destTotal;
+
+      const sy0 = srcY[si] + srcProgress[si] * srcBarH[si];
+      const sy1 = sy0 + srcFrac * srcBarH[si];
+      const dy0 = destY[di] + destProgress[di] * destBarH[di];
+      const dy1 = dy0 + destFrac * destBarH[di];
+
+      srcProgress[si] += srcFrac;
+      destProgress[di] += destFrac;
+
+      const cx = MARGIN.left + innerW * 0.5;
+
+      const path = flowGroup.append('path')
+        .attr('d', `M${srcX + BAR_W},${(sy0 + sy1) / 2}
+           C${cx},${(sy0 + sy1) / 2} ${cx},${(dy0 + dy1) / 2} ${destX},${(dy0 + dy1) / 2}`)
+        .attr('fill', 'none')
+        .attr('stroke', srcFlow.color)
+        .attr('stroke-width', Math.max(1.5, sy1 - sy0))
+        .attr('stroke-opacity', 0.18)
+        .attr('class', 'flow-path')
+        .datum({ srcName: srcFlow.source, destName, users: srcFlow.users, srcTotal: srcTotals[si].displayTotal });
+
+      path.on('mouseenter', function(event, d) {
+        d3.select(this).attr('stroke-opacity', 0.55);
+        showTooltip(event, d.destName, d.users, ((d.users / d.srcTotal) * 100).toFixed(1) + '%');
+      }).on('mousemove', moveTooltip)
+        .on('mouseleave', function() {
+          d3.select(this).attr('stroke-opacity', 0.18);
+          hideTooltip();
+        });
+    });
+  });
+
+  // Draw source bars
+  srcTotals.forEach((src, i) => {
+    const g = svg.append('g');
+
+    g.append('rect')
+      .attr('x', srcX)
+      .attr('y', srcY[i])
+      .attr('width', BAR_W)
+      .attr('height', srcBarH[i])
+      .attr('fill', src.color)
+      .attr('rx', 3)
+      .attr('opacity', 0.9);
+
+    // Source label
+    g.append('text')
+      .attr('x', srcX - 10)
+      .attr('y', srcY[i] + srcBarH[i] / 2 - 8)
+      .attr('text-anchor', 'end')
+      .attr('font-family', 'Syne, sans-serif')
+      .attr('font-weight', '700')
+      .attr('font-size', '13')
+      .attr('fill', src.color)
+      .text(src.source);
+
+    g.append('text')
+      .attr('x', srcX - 10)
+      .attr('y', srcY[i] + srcBarH[i] / 2 + 10)
+      .attr('text-anchor', 'end')
+      .attr('font-family', 'DM Mono, monospace')
+      .attr('font-size', '11')
+      .attr('fill', '#7eb8d4')
+      .text(src.displayTotal.toLocaleString() + ' users');
+  });
+
+  // Draw destination bars + labels
+  dests.forEach(([destName, destData], i) => {
+    const catColor = CATEGORY_COLORS[destData.category] || '#ffffff';
+    const g = svg.append('g');
+
+    g.append('rect')
+      .attr('x', destX)
+      .attr('y', destY[i])
+      .attr('width', BAR_W)
+      .attr('height', destBarH[i])
+      .attr('fill', catColor)
+      .attr('rx', 3)
+      .attr('opacity', 0.85);
+
+    // Destination name
+    g.append('text')
+      .attr('x', destX + BAR_W + 10)
+      .attr('y', destY[i] + Math.max(destBarH[i] / 2, 6) + 4)
+      .attr('font-family', 'DM Mono, monospace')
+      .attr('font-size', '11')
+      .attr('fill', '#a8cce0')
+      .text(destName);
+
+    // Users count
+    g.append('text')
+      .attr('x', destX + BAR_W + 10)
+      .attr('y', destY[i] + Math.max(destBarH[i] / 2, 6) + 18)
+      .attr('font-family', 'DM Mono, monospace')
+      .attr('font-size', '10')
+      .attr('fill', catColor)
+      .attr('opacity', 0.9)
+      .text(destData.users.toLocaleString() + ' users · ' + ((destData.users / grandTotal) * 100).toFixed(1) + '%');
+  });
+
+  // Column headers
+  svg.append('text')
+    .attr('x', srcX + BAR_W / 2)
+    .attr('y', MARGIN.top - 8)
+    .attr('text-anchor', 'middle')
+    .attr('font-family', 'DM Mono, monospace')
+    .attr('font-size', '10')
+    .attr('letter-spacing', '0.1em')
+    .attr('fill', '#7eb8d4')
+    .attr('text-transform', 'uppercase')
+    .text('SOURCES');
+
+  svg.append('text')
+    .attr('x', destX + BAR_W / 2)
+    .attr('y', MARGIN.top - 8)
+    .attr('text-anchor', 'middle')
+    .attr('font-family', 'DM Mono, monospace')
+    .attr('font-size', '10')
+    .attr('letter-spacing', '0.1em')
+    .attr('fill', '#7eb8d4')
+    .text('DESTINATIONS');
+}
+
+function showTooltip(event, title, users, pct) {
+  const tt = document.getElementById('tooltip');
+  document.getElementById('tt-title').textContent = title;
+  document.getElementById('tt-users').textContent = users.toLocaleString();
+  document.getElementById('tt-pct').textContent = pct;
+  tt.classList.add('visible');
+  moveTooltip(event);
+}
+
+function moveTooltip(event) {
+  const tt = document.getElementById('tooltip');
+  tt.style.left = (event.clientX + 14) + 'px';
+  tt.style.top = (event.clientY - 30) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').classList.remove('visible');
+}
+
+// Initial render
+renderChart();
+window.addEventListener('resize', renderChart);
+</script>
+</body>
+</html>

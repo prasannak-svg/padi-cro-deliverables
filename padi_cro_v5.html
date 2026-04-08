@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI.com — CRO Strategic Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&family=Barlow+Condensed:wght@400;600;700;800;900&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+:root{
+  --navy:#003087;--navy-dark:#001d52;--navy-light:#004db3;
+  --red:#c8102e;--red-light:#e8193a;
+  --white:#ffffff;--off-white:#f4f6fb;
+  --grey-light:#e8edf5;--grey-mid:#b0bcd6;--grey-text:#6b7a9e;
+  --gold:#f0a500;--teal:#00b4d8;--green:#00c875;
+  --surface:#ffffff;--surface-2:#f0f4fb;--border:rgba(0,48,135,0.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Barlow',sans-serif;background:var(--off-white);color:#1a2540;min-height:100vh;overflow-x:hidden;}
+
+/* SIDEBAR */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:224px;background:var(--navy-dark);display:flex;flex-direction:column;z-index:100;box-shadow:4px 0 24px rgba(0,0,0,.18);}
+.sidebar-logo{padding:24px 22px 18px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sidebar-logo .brand{font-family:'Montserrat',sans-serif;font-weight:800;font-size:21px;color:#fff;letter-spacing:2px;}
+.sidebar-logo .brand span{color:var(--red);}
+.sidebar-logo .sub{font-size:10px;color:var(--grey-mid);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px;font-weight:500;}
+.nav-section{padding:14px 0 6px;}
+.nav-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--grey-mid);padding:0 18px 7px;opacity:.7;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;transition:all .2s;border-left:3px solid transparent;font-size:13px;font-weight:500;color:rgba(255,255,255,.6);text-decoration:none;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;border-left-color:var(--grey-mid);}
+.nav-item.active{background:rgba(200,16,46,.15);color:#fff;border-left-color:var(--red);}
+.nav-item .icon{font-size:13px;width:17px;text-align:center;}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:10px;color:var(--grey-mid);line-height:1.6;opacity:.7;}
+
+/* MAIN */
+.main{margin-left:224px;min-height:100vh;}
+.topbar{background:var(--navy);padding:0 36px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:90;box-shadow:0 2px 16px rgba(0,0,0,.12);}
+.topbar-title{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:17px;color:#fff;letter-spacing:.5px;}
+.topbar-meta{display:flex;align-items:center;gap:20px;}
+.meta-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:3px 9px;font-size:11px;font-weight:600;color:rgba(255,255,255,.8);letter-spacing:.5px;}
+.meta-badge.live{background:rgba(0,200,117,.15);border-color:rgba(0,200,117,.3);color:var(--green);}
+.meta-badge.live::before{content:'●';margin-right:5px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* SECTIONS */
+.section{padding:32px 36px;display:none;}
+.section.active{display:block;animation:fadeIn .28s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* PAGE HEADER */
+.page-header{margin-bottom:28px;display:flex;align-items:flex-end;justify-content:space-between;}
+.page-header-left h2{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:800;color:var(--navy-dark);letter-spacing:.5px;line-height:1;}
+.page-header-left p{font-size:13px;color:var(--grey-text);margin-top:5px;}
+.accent-line{width:44px;height:4px;background:var(--red);border-radius:2px;margin-top:8px;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-grid-3{grid-template-columns:repeat(3,1fr);}
+.stat-card{background:var(--surface);border-radius:10px;padding:18px 22px;border:1px solid var(--border);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,48,135,.1);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--navy);border-radius:10px 10px 0 0;}
+.stat-card.red::before{background:var(--red);}.stat-card.teal::before{background:var(--teal);}.stat-card.gold::before{background:var(--gold);}.stat-card.green::before{background:var(--green);}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--grey-text);margin-bottom:6px;}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--navy-dark);letter-spacing:-.5px;line-height:1;}
+.stat-value.red{color:var(--red);}.stat-value.green{color:#00a361;}.stat-value.teal{color:var(--navy-light);}
+.stat-sub{font-size:12px;color:var(--grey-text);margin-top:5px;}
+.stat-delta{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;margin-top:7px;}
+.stat-delta.up{background:rgba(0,200,117,.1);color:#00a361;}.stat-delta.down{background:rgba(200,16,46,.1);color:var(--red);}.stat-delta.warn{background:rgba(240,165,0,.1);color:#c48600;}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.card-header{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--navy-dark);letter-spacing:.3px;text-transform:uppercase;}
+.card-badge{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--grey-text);}
+.card-body{padding:20px 22px;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+
+/* INSIGHT BOXES */
+.insight-box{border-left:4px solid var(--navy);background:rgba(0,48,135,.04);border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:10px;}
+.insight-box.red{border-color:var(--red);background:rgba(200,16,46,.04);}.insight-box.gold{border-color:var(--gold);background:rgba(240,165,0,.05);}.insight-box.green{border-color:var(--green);background:rgba(0,200,117,.05);}
+.insight-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--navy);margin-bottom:4px;}
+.insight-box.red .insight-label{color:var(--red);}.insight-box.gold .insight-label{color:#b07800;}.insight-box.green .insight-label{color:#00a361;}
+.insight-text{font-size:13px;color:#2a3555;line-height:1.5;}
+
+/* PILLS */
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.pill-navy{background:rgba(0,48,135,.1);color:var(--navy);}.pill-red{background:rgba(200,16,46,.1);color:var(--red);}.pill-green{background:rgba(0,200,117,.1);color:#00a361;}.pill-gold{background:rgba(240,165,0,.12);color:#b07800;}.pill-teal{background:rgba(0,180,216,.12);color:#007a96;}.pill-grey{background:var(--grey-light);color:var(--grey-text);}
+
+/* DATA TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+.data-table th{background:var(--navy-dark);color:rgba(255,255,255,.85);font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:10px 13px;text-align:left;}
+.data-table td{padding:10px 13px;border-bottom:1px solid var(--border);color:#2a3555;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:var(--surface-2);}
+.data-table .num{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;}
+.scroll-x{overflow-x:auto;}
+
+/* STATUS CHIPS */
+.status-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.chip-simulated{background:rgba(0,48,135,.08);color:var(--navy);}.chip-pending{background:rgba(240,165,0,.1);color:#b07800;}.chip-live{background:rgba(0,200,117,.1);color:#00a361;}
+
+/* METRIC ROWS */
+.metric-row{display:grid;grid-template-columns:220px 120px 1fr 120px;gap:10px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--border);transition:background .15s;}
+.metric-row:last-child{border-bottom:none;}
+.metric-row:hover{background:var(--surface-2);}
+.metric-name{font-size:13px;font-weight:600;color:var(--navy-dark);}
+.metric-event{font-size:11px;color:var(--grey-text);font-family:monospace;background:var(--surface-2);padding:2px 5px;border-radius:3px;}
+.metric-desc{font-size:12px;color:#4a5880;line-height:1.4;}
+.metric-rate{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--navy-dark);}
+.rate-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;}
+.dot-green{background:var(--green);}.dot-gold{background:var(--gold);}.dot-red{background:var(--red);}.dot-grey{background:var(--grey-mid);}
+
+/* ECO ROWS */
+.eco-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.eco-row:last-child{border-bottom:none;}
+.eco-domain{font-size:12px;font-weight:600;color:var(--navy-dark);width:170px;flex-shrink:0;}
+.eco-bar-wrap{flex:1;display:flex;align-items:center;gap:7px;}
+.eco-bar-bg{flex:1;height:8px;background:var(--grey-light);border-radius:4px;overflow:hidden;}
+.eco-bar-fill{height:100%;border-radius:4px;background:var(--navy);}
+.eco-bar-fill.prospect{background:var(--teal);}
+.eco-nums{display:flex;gap:14px;width:190px;flex-shrink:0;}
+.eco-num{font-size:12px;text-align:right;}
+.eco-num .val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--navy-dark);display:block;}
+.eco-num .lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--grey-text);}
+
+/* SECTION DIVIDER */
+.section-divider{height:1px;background:var(--border);margin:20px 0;}
+.mt-16{margin-top:16px;}.mt-24{margin-top:24px;}.mb-16{margin-bottom:16px;}.mb-24{margin-bottom:24px;}
+
+/* ══════════════════════════════════════════
+   GA4-STYLE FUNNEL COMPONENT
+══════════════════════════════════════════ */
+.funnel-open-note{background:#edf4fb;border:1px solid #b8d4ed;border-radius:7px;padding:10px 14px;font-size:12px;color:#2a4a6b;margin-bottom:18px;display:flex;align-items:flex-start;gap:8px;}
+.funnel-open-note .icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+
+.funnel-device-tabs{display:flex;gap:5px;margin-bottom:16px;}
+.fdt{padding:5px 14px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--grey-text);transition:all .18s;letter-spacing:.4px;text-transform:uppercase;user-select:none;}
+.fdt:hover{border-color:var(--navy);color:var(--navy);}
+.fdt.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+.ga4-funnel{width:100%;}
+.ga4-step{margin-bottom:4px;}
+.ga4-step-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.ga4-step-left{display:flex;align-items:center;gap:9px;}
+.ga4-step-num{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ga4-step-num.highest{background:#e07b00;}
+.ga4-step-name{font-size:14px;font-weight:600;color:var(--navy-dark);}
+.ga4-step-badge{background:#ffeaea;border:1px solid rgba(200,16,46,.25);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--red);margin-left:4px;}
+.ga4-step-right{font-size:13px;color:var(--grey-text);}
+.ga4-step-right .users{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--navy-dark);}
+.ga4-step-right .cvr{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;margin-left:10px;}
+.ga4-step-right .cvr.good{color:#00a361;}.ga4-step-right .cvr.warn{color:#b07800;}.ga4-step-right .cvr.bad{color:var(--red);}
+
+.ga4-bar-row{display:flex;align-items:stretch;height:36px;border-radius:5px;overflow:hidden;background:var(--grey-light);}
+.ga4-bar-fill{height:100%;background:var(--red);display:flex;align-items:center;padding-left:10px;transition:width .5s ease;min-width:40px;}
+.ga4-bar-label{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;}
+
+.ga4-drop-row{display:flex;align-items:center;gap:6px;padding:5px 0 5px 34px;font-size:11px;color:var(--grey-text);}
+.ga4-drop-row .drop-arrow{color:var(--red);font-weight:700;}
+.ga4-drop-row .drop-pct{color:var(--red);font-weight:700;}
+.ga4-drop-row .drop-users{font-weight:600;}
+.ga4-drop-row .proceed{color:var(--grey-text);}
+
+/* ══════════════════════════════════════════
+   OVERVIEW HERO
+══════════════════════════════════════════ */
+.overview-hero{background:linear-gradient(135deg,var(--navy-dark) 0%,var(--navy) 60%,#0047aa 100%);border-radius:12px;padding:28px 32px;color:white;margin-bottom:24px;position:relative;overflow:hidden;}
+.overview-hero::after{content:'';position:absolute;right:-60px;top:-60px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}
+.hero-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;letter-spacing:.5px;margin-bottom:5px;}
+.hero-sub{font-size:13px;opacity:.7;margin-bottom:24px;font-weight:300;}
+.hero-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid rgba(255,255,255,.12);padding-top:20px;}
+.hero-stat{padding-right:20px;border-right:1px solid rgba(255,255,255,.1);}
+.hero-stat:last-child{border-right:none;}
+.hero-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:900;line-height:1;color:#fff;}
+.hero-stat-val.accent{color:#5bc4f5;}.hero-stat-val.red{color:#ff6b7a;}
+.hero-stat-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;opacity:.65;margin-top:4px;}
+
+/* ══════════════════════════════════════════
+   SANKEY PATH EXPLORATION
+══════════════════════════════════════════ */
+.path-tabs{display:flex;gap:5px;margin-bottom:16px;}
+.path-tab{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--grey-text);transition:all .18s;letter-spacing:.3px;text-transform:uppercase;user-select:none;}
+.path-tab:hover{border-color:var(--navy);color:var(--navy);}
+.path-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.path-stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.psc{background:var(--surface-2);border-radius:8px;padding:12px 15px;border:1px solid var(--border);}
+.psc-l{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--grey-text);margin-bottom:4px;}
+.psc-v{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;color:var(--navy-dark);line-height:1;}
+.psc-s{font-size:11px;color:var(--grey-text);margin-top:2px;}
+.path-ins-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px;}
+.path-ib{background:var(--surface);border-radius:8px;border:1px solid var(--border);padding:13px 15px;border-left:4px solid;}
+.path-ib.navy{border-left-color:var(--navy);}.path-ib.red{border-left-color:var(--red);}.path-ib.green{border-left-color:var(--green);}
+.path-ib-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--grey-text);margin-bottom:4px;}
+.path-ib-t{font-size:12px;color:#2a3555;line-height:1.45;}
+#path-svg-wrap svg{width:100%;display:block;}
+
+/* TOOLTIP */
+.tip{position:fixed;background:var(--navy-dark);color:#fff;border-radius:8px;padding:10px 13px;font-size:12px;pointer-events:none;opacity:0;transition:opacity .12s;z-index:9999;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.28);}
+.tip.on{opacity:1;}
+.tip strong{font-size:13px;display:block;margin-bottom:2px;}
+.tip .tp{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;color:#5bc4f5;display:block;line-height:1.1;}
+.tip .tm{color:rgba(255,255,255,.6);font-size:11px;}
+</style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">PADI<span>.</span>com</div>
+    <div class="sub">CRO Strategic Review</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item active" onclick="showSection('overview')"><span class="icon">◈</span> Executive Summary</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Segmentation</div>
+    <a class="nav-item" onclick="showSection('exclusion')"><span class="icon">⊘</span> Login Exclusion</a>
+    <a class="nav-item" onclick="showSection('ecosystem')"><span class="icon">⬡</span> Ecosystem Split</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Funnel Analysis</div>
+    <a class="nav-item" onclick="showSection('store')"><span class="icon">⬟</span> Store Funnels</a>
+    <a class="nav-item" onclick="showSection('certcards')"><span class="icon">🪪</span> Cert Cards Funnel</a>
+    <a class="nav-item" onclick="showSection('travel')"><span class="icon">✦</span> Travel Funnels</a>
+    <a class="nav-item" onclick="showSection('paths')"><span class="icon">↝</span> Path Exploration</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">CRO Framework</div>
+    <a class="nav-item" onclick="showSection('goals')"><span class="icon">◎</span> Goals & Metrics</a>
+    <a class="nav-item" onclick="showSection('experiments')"><span class="icon">⟁</span> Experiment Hierarchy</a>
+    <a class="nav-item" onclick="showSection('baseline')"><span class="icon">▣</span> Metrics Baseline</a>
+  </div>
+  <div class="sidebar-footer">GA4 Global — Live<br>Jan – Jul 2025 · padi.com<br>CRO Lead: Prasanna</div>
+</nav>
+
+<!-- ─── MAIN ─── -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">PADI.com — Conversion Rate Optimisation Review</div>
+    <div class="topbar-meta">
+      <span class="meta-badge">Jan – Jul 2025</span>
+      <span class="meta-badge">padi.com</span>
+      <span class="meta-badge live">GA4 Live</span>
+    </div>
+  </div>
+
+  <!-- ════ OVERVIEW ════ -->
+  <div id="overview" class="section active">
+    <div class="page-header"><div class="page-header-left"><h2>Executive Summary</h2><p>Clean prospect universe after login exclusion · Jan–Jul 2025</p><div class="accent-line"></div></div></div>
+    <div class="overview-hero">
+      <div class="hero-title">Prospect-Cleaned Funnel Foundation</div>
+      <div class="hero-sub">Login segment excluded · 28 filters across 4 groups · Addressable prospect universe identified</div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-val">3.82M</div><div class="hero-stat-lbl">Total Users</div></div>
+        <div class="hero-stat"><div class="hero-stat-val red">315K</div><div class="hero-stat-lbl">Login Excluded</div></div>
+        <div class="hero-stat"><div class="hero-stat-val red">218K</div><div class="hero-stat-lbl">(not set) Sessions</div></div>
+        <div class="hero-stat"><div class="hero-stat-val accent">3.28M</div><div class="hero-stat-lbl">Prospect Base</div></div>
+        <div class="hero-stat"><div class="hero-stat-val">85.9%</div><div class="hero-stat-lbl">Addressable %</div></div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card red"><div class="stat-label">Login Exclusion Rate</div><div class="stat-value red">8.26%</div><div class="stat-sub">315,284 users · 28 filters</div><div class="stat-delta down">↓ Not prospect traffic</div></div>
+      <div class="stat-card green"><div class="stat-label">Store CVR (PADI→Purchase)</div><div class="stat-value green">0.67%</div><div class="stat-sub">21,207 purchases / 3.17M users</div><div class="stat-delta warn">⚠ Cross-domain gap</div></div>
+      <div class="stat-card teal"><div class="stat-label">Travel CVR (PADI→Booking)</div><div class="stat-value teal">0.16%</div><div class="stat-sub">5,138 purchases / 3.27M users</div><div class="stat-delta down">↓ High ATC leakage</div></div>
+      <div class="stat-card"><div class="stat-label">Store Direct CVR</div><div class="stat-value">1.32%</div><div class="stat-sub">23,720 purchases / 1.79M store users</div><div class="stat-delta up">✓ Stronger direct</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔍 Key CRO Findings</div></div>
+        <div class="card-body">
+          <div class="insight-box red"><div class="insight-label">Critical Drop — PADI → Store</div><div class="insight-text">Only 9.2% of padi.com users reach the Courses PLP on store.padi.com. Cross-domain handoff is the #1 conversion leak. Desktop converts 2× better than mobile at this step.</div></div>
+          <div class="insight-box gold"><div class="insight-label">ATC Abandonment — Travel Funnel</div><div class="insight-text">Travel Add-to-Cart abandonment hits 92.5%. Mobile is worst at 95.1%. Only 5.4% of users who reach the Travel homepage convert to any downstream step.</div></div>
+          <div class="insight-box"><div class="insight-label">Prospect Base Confirmed</div><div class="insight-text">3.27M clean prospect users on padi.com after removing 315K login sessions. /education/continue-learning kept in funnel — 36K users, accessible to anonymous visitors.</div></div>
+          <div class="insight-box green"><div class="insight-label">Path Loop: Dive Shops Nearby</div><div class="insight-text">495K users engage the nearby tool yet the #1 next step is Homepage (8,903 users) — suggesting low intent completion. Course locator and dive sites are the real downstream signals.</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎯 CRO Priority Areas</div></div>
+        <div class="card-body">
+          <table class="data-table">
+            <thead><tr><th>Area</th><th>Impact</th><th>Priority</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Cross-domain padi.com → store handoff</strong></td><td><span class="pill pill-red">9.2% reach rate</span></td><td><span class="pill pill-red">P1</span></td></tr>
+              <tr><td><strong>Mobile CVR gap (store funnel)</strong></td><td><span class="pill pill-red">7.2% vs 12.7% desktop</span></td><td><span class="pill pill-red">P1</span></td></tr>
+              <tr><td><strong>ATC → Purchase drop (Travel)</strong></td><td><span class="pill pill-gold">92.5% abandon</span></td><td><span class="pill pill-red">P1</span></td></tr>
+              <tr><td><strong>Dive shops nearby loop</strong></td><td><span class="pill pill-gold">Returns to homepage</span></td><td><span class="pill pill-gold">P2</span></td></tr>
+              <tr><td><strong>Course locator visibility</strong></td><td><span class="pill pill-gold">0.21% view rate</span></td><td><span class="pill pill-gold">P2</span></td></tr>
+              <tr><td><strong>Exploration section discovery</strong></td><td><span class="pill pill-navy">1.8% reach rate</span></td><td><span class="pill pill-navy">P3</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ LOGIN EXCLUSION ════ -->
+  <div id="exclusion" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Login Exclusion Methodology</h2><p>28 filters across 4 groups · Clean prospect universe</p><div class="accent-line"></div></div></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Grand Total Users</div><div class="stat-value">3,817,499</div><div class="stat-sub">Raw GA4 total · padi.com hostname</div></div>
+      <div class="stat-card red"><div class="stat-label">Login Segment Removed</div><div class="stat-value red">315,284</div><div class="stat-sub">8.26% of total · 28 filter patterns</div></div>
+      <div class="stat-card red"><div class="stat-label">(not set) Sessions</div><div class="stat-value red">218,154</div><div class="stat-sub">5.71% · Unattributed</div></div>
+      <div class="stat-card green"><div class="stat-label">Prospect Universe</div><div class="stat-value green">3,284,061</div><div class="stat-sub">85.99% addressable prospect base</div></div>
+    </div>
+    <div class="card mt-24">
+      <div class="card-header"><div class="card-title">Exclusion Group Breakdown</div><div class="card-badge">28 Filters Total</div></div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>Group</th><th>Users Excluded</th><th>% of Excluded</th><th># Filters</th><th>Examples</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Group 1 — Auth & Login Pages</strong></td><td class="num">117,961</td><td><span class="pill pill-red">37.4%</span></td><td>7</td><td><code style="font-size:11px">/login/, /padi-sso/callback, /authorize</code></td></tr>
+            <tr><td><strong>Group 2 — Post-Login Member Pages</strong></td><td class="num">201,039</td><td><span class="pill pill-red">63.8%</span></td><td>13</td><td><code style="font-size:11px">/training/dashboard, /me/, /certcard, /account</code></td></tr>
+            <tr><td><strong>Group 3 — Pro & Instructor Portal</strong></td><td class="num">10,418</td><td><span class="pill pill-gold">3.3%</span></td><td>4</td><td><code style="font-size:11px">/Pros/, /mypadi/, /MyPADI/applications/</code></td></tr>
+            <tr><td><strong>Group 5 — Error & Blocked Pages</strong></td><td class="num">4,350</td><td><span class="pill pill-grey">1.4%</span></td><td>2</td><td><code style="font-size:11px">/404, /blocked</code></td></tr>
+          </tbody>
+        </table>
+        <div class="insight-box green" style="margin-top:14px"><div class="insight-label">✓ Deliberate Inclusion</div><div class="insight-text"><strong>/education/continue-learning</strong> — 36,054 users KEPT. This is a public content page accessible to anonymous visitors and represents genuine course exploration intent.</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="card-header"><div class="card-title">Top Excluded Landing Pages</div></div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>Landing Page</th><th>Users</th><th>Group</th><th>% of Excluded</th></tr></thead>
+          <tbody>
+            <tr><td>/login/sign-in</td><td class="num">54,203</td><td><span class="pill pill-navy">Group 1</span></td><td>17.2%</td></tr>
+            <tr><td>/training/dashboard</td><td class="num">52,751</td><td><span class="pill pill-gold">Group 2</span></td><td>16.7%</td></tr>
+            <tr><td>/certcard</td><td class="num">47,678</td><td><span class="pill pill-gold">Group 2</span></td><td>15.1%</td></tr>
+            <tr><td>/training/course/</td><td class="num">40,352</td><td><span class="pill pill-gold">Group 2</span></td><td>12.8%</td></tr>
+            <tr><td>/login/sign-in/en-US</td><td class="num">24,232</td><td><span class="pill pill-navy">Group 1</span></td><td>7.7%</td></tr>
+            <tr><td>/me/</td><td class="num">22,075</td><td><span class="pill pill-gold">Group 2</span></td><td>7.0%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ECOSYSTEM ════ -->
+  <div id="ecosystem" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Ecosystem Prospect Split</h2><p>Login exclusion applied across all PADI sub-domains</p><div class="accent-line"></div></div></div>
+    <div class="stat-grid stat-grid-3">
+      <div class="stat-card"><div class="stat-label">Total Ecosystem Users</div><div class="stat-value">10.38M</div><div class="stat-sub">Across all PADI sub-domains</div></div>
+      <div class="stat-card green"><div class="stat-label">Prospect Users (Clean)</div><div class="stat-value green">8.13M</div><div class="stat-sub">78.3% of total ecosystem</div></div>
+      <div class="stat-card red"><div class="stat-label">Login / Member Users</div><div class="stat-value red">2.25M</div><div class="stat-sub">21.7% — excluded from CRO scope</div></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="card-header"><div class="card-title">Sub-Domain Prospect vs Login Breakdown</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:170px 1fr 190px;gap:7px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--grey-text);">Domain</div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--grey-text);">Prospect % of Total</div>
+          <div style="display:flex;gap:14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--grey-text);"><span style="flex:1">Total</span><span style="flex:1">Prospects</span></div>
+        </div>
+        <div class="eco-row"><div class="eco-domain">www.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill prospect" style="width:86.8%"></div></div><span style="font-size:12px;font-weight:700;color:#007a96;min-width:36px">86.8%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">3.77M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">3.27M</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">store.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill prospect" style="width:78.2%"></div></div><span style="font-size:12px;font-weight:700;color:#007a96;min-width:36px">78.2%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">1.80M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">1.41M</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">blog.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill prospect" style="width:94.7%"></div></div><span style="font-size:12px;font-weight:700;color:#007a96;min-width:36px">94.7%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">1.34M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">1.27M</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">account.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill" style="width:27.3%;background:var(--red)"></div></div><span style="font-size:12px;font-weight:700;color:var(--red);min-width:36px">27.3%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">1.90M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">520K</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">travel.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill prospect" style="width:91.7%"></div></div><span style="font-size:12px;font-weight:700;color:#007a96;min-width:36px">91.7%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">1.26M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">1.15M</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">learning.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill" style="width:26.9%;background:var(--red)"></div></div><span style="font-size:12px;font-weight:700;color:var(--red);min-width:36px">26.9%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">1.51M</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">407K</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">pro.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill" style="width:13.5%;background:var(--red)"></div></div><span style="font-size:12px;font-weight:700;color:var(--red);min-width:36px">13.5%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">505K</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">68K</span><span class="lbl">Prospects</span></div></div></div>
+        <div class="eco-row"><div class="eco-domain">preferences.padi.com</div><div class="eco-bar-wrap"><div class="eco-bar-bg"><div class="eco-bar-fill prospect" style="width:90.4%"></div></div><span style="font-size:12px;font-weight:700;color:#007a96;min-width:36px">90.4%</span></div><div class="eco-nums"><div class="eco-num"><span class="val">126K</span><span class="lbl">Total</span></div><div class="eco-num"><span class="val">114K</span><span class="lbl">Prospects</span></div></div></div>
+      </div>
+    </div>
+    <div class="insight-box red" style="margin-top:16px"><div class="insight-label">⚠ High Login Concentration</div><div class="insight-text"><strong>account.padi.com, learning.padi.com, pro.padi.com, apps.padi.com</strong> are predominantly authenticated traffic. Focus CRO experiments on www.padi.com, travel.padi.com, and store.padi.com where prospect rates are 78–95%.</div></div>
+  </div>
+
+  <!-- ════ STORE FUNNELS ════ -->
+  <div id="store" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Store Funnel Analysis</h2><p>PADI.com → Store cross-domain · Store direct funnel · Device drill-down</p><div class="accent-line"></div></div></div>
+
+    <!-- PADI.com → Store cross-domain -->
+    <div class="card mb-24">
+      <div class="card-header">
+        <div class="card-title">PADI.com → Store Purchase (Cross-Domain)</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">4-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('xd','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('xd','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('xd','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> Some steps have more users than step 1. GA4 counts users who entered at any step, not just from the top — so later steps can exceed earlier ones.</span></div>
+        <div id="funnel-xd"></div>
+      </div>
+    </div>
+
+    <!-- Store direct funnel -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Store Direct Funnel (store.padi.com)</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">5-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('sd','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('sd','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('sd','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> Some steps have more users than step 1. GA4 counts users who entered at any step, not just from the top — so later steps can exceed earlier ones.</span></div>
+        <div id="funnel-sd"></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="card-header">
+        <div class="card-title">Cert Cards Funnel (PADI.com → Purchase)</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">5-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('cc','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('cc','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('cc','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> GA4 open funnel — users can enter at any step.</span></div>
+        <div id="funnel-cc"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ CERT CARDS FUNNEL ════ -->
+  <div id="certcards" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Cert Cards Funnel</h2><p>PADI.com → Certification Cards → Purchase · Device breakdown</p><div class="accent-line"></div></div></div>
+    <div class="stat-grid stat-grid-3">
+      <div class="stat-card red"><div class="stat-label">PADI.com → Cert Cards Reach</div><div class="stat-value red">0.40%</div><div class="stat-sub">13,047 of 3.29M users reach Cert Cards</div></div>
+      <div class="stat-card"><div class="stat-label">Cert Cards → Purchase CVR</div><div class="stat-value">5.69%</div><div class="stat-sub">742 purchases from 13,047 who reach page</div></div>
+      <div class="stat-card green"><div class="stat-label">ATC → Purchase Rate</div><div class="stat-value green">51.2%</div><div class="stat-sub">Strongest ATC→Purchase of all funnels</div></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <div class="card-header">
+        <div class="card-title">Cert Cards Funnel — PADI.com → Purchase</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">5-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('cc2','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('cc2','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('cc2','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> GA4 open funnel — users can enter at any step.</span></div>
+        <div id="funnel-cc2"></div>
+      </div>
+    </div>
+    <div class="insight-box green" style="margin-top:16px"><div class="insight-label">✓ Highest ATC→Purchase Rate</div><div class="insight-text">Cert Cards has the strongest Add-to-Cart → Purchase conversion at 51.2% — significantly better than Store (36.7%) and Travel (7.5%). Users who reach the cart for cert cards are highly committed. The primary opportunity is getting more users to the Cert Cards page in the first place — only 0.40% of padi.com users reach it.</div></div>
+  </div>
+
+  <!-- ════ TRAVEL FUNNELS ════ -->
+  <div id="travel" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Travel Funnel Analysis</h2><p>PADI.com → Exploration → Travel (Funnel 1) · Dive Shops Nearby → Purchase (Funnel 2) · Travel direct</p><div class="accent-line"></div></div></div>
+
+    <!-- TRAVEL FUNNEL 1 -->
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <div class="card-title">Travel Funnel 1 — PADI.com → Exploration → Purchase</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">7-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('t1','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('t1','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('t1','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> Steps 5 & 6 (PDP, ATC) show more users than earlier steps because users can enter the travel funnel directly at those pages — GA4 counts entries at any step.</span></div>
+        <div id="funnel-t1"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div class="card-header">
+        <div class="card-title">Travel Funnel 2 — Dive Shops Nearby → Purchase</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">5-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('t2','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('t2','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('t2','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> GA4 open funnel — users can enter at any step.</span></div>
+        <div id="funnel-t2"></div>
+      </div>
+    </div>
+
+    <div class="card mb-24">
+      <div class="card-header">
+        <div class="card-title">Travel Simple Funnel (travel.padi.com)</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="card-badge">5-Step · Open Funnel</div>
+          <div class="funnel-device-tabs" style="margin-bottom:0">
+            <button class="fdt active" onclick="switchFunnel('ts','total',this)">Total</button>
+            <button class="fdt" onclick="switchFunnel('ts','desktop',this)">Desktop</button>
+            <button class="fdt" onclick="switchFunnel('ts','mobile',this)">Mobile</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="funnel-open-note"><span class="icon">⚠</span><span><strong>Open funnel:</strong> GA4 open funnel — users can enter at any step.</span></div>
+        <div id="funnel-ts"></div>
+      </div>
+    </div>
+
+    <div class="insight-box red"><div class="insight-label">⚠ Travel PLP → PDP Drop</div><div class="insight-text">64.6% of users abandon the Travel PLP without clicking through to a PDP. Mobile is worst at 68.4% abandonment vs desktop at 58.6%. A major opportunity for listing page optimisation — card design, filtering, social proof.</div></div>
+  </div>
+
+  <!-- ════ PATH EXPLORATION ════ -->
+  <div id="paths" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Path Exploration</h2><p>User flows from key entry points · Login-excluded prospect segment · Hover flows & nodes to explore</p><div class="accent-line"></div></div></div>
+
+    <div class="path-tabs">
+      <button class="path-tab active" id="ptab-nearby"    onclick="switchPath('nearby')">📍 Dive Shops Nearby</button>
+      <button class="path-tab"        id="ptab-education" onclick="switchPath('education')">📚 Continue Learning</button>
+      <button class="path-tab"        id="ptab-homepage"  onclick="switchPath('homepage')">🏠 Homepage</button>
+      <button class="path-tab"        id="ptab-freeintro" onclick="switchPath('freeintro')">🤿 Free Intro Course</button>
+    </div>
+
+    <div class="path-stat-row" id="path-stats"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title" id="path-card-title">—</div><div style="font-size:12px;color:var(--grey-text);margin-top:2px" id="path-card-sub">—</div></div>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-text)"><svg width="32" height="10"><line x1="0" y1="5" x2="32" y2="5" stroke="#5B7FE8" stroke-width="4" opacity="0.6"/></svg>Forward flow</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-text)"><svg width="32" height="10"><line x1="0" y1="5" x2="32" y2="5" stroke="#999" stroke-width="2.5" stroke-dasharray="5,3" opacity="0.8"/></svg>Return to home</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--grey-text)"><svg width="32" height="10"><line x1="0" y1="8" x2="32" y2="8" stroke="#5B7FE8" stroke-width="5" opacity="0.5"/><line x1="0" y1="2" x2="32" y2="2" stroke="#5B7FE8" stroke-width="2" opacity="0.3"/></svg>Thicker = higher %</div>
+        </div>
+      </div>
+      <div id="path-sankey-wrap" style="padding:16px 10px 10px;background:#fff;overflow-x:auto;">
+        <svg id="path-sankey-svg"></svg>
+      </div>
+    </div>
+
+    <div class="path-ins-row" id="path-insights"></div>
+  </div>
+
+  <!-- ════ GOALS & METRICS ════ -->
+  <div id="goals" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Goals & Metrics Framework</h2><p>12 events · Primary / Secondary / Guardrail classification · Proxy CVR mapping</p><div class="accent-line"></div></div></div>
+    <div class="insight-box" style="margin-bottom:18px"><div class="insight-label">Framework Note</div><div class="insight-text">Final purchase CVR occurs on <strong>store.padi.com / travel.padi.com</strong> — not on padi.com. All events below act as <strong>proxy success metrics</strong> for A/B experiments run on padi.com. Primary = main decision metric · Secondary = supporting signal · Guardrail = must not decline.</div></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">All Goals & Proxy Metrics</div><div class="card-badge">12 Events Defined</div></div>
+      <div class="scroll-x">
+        <table class="data-table">
+          <thead><tr><th style="width:190px">Metric</th><th style="width:170px">GA4 Event</th><th>Category</th><th>Priority</th><th>Role</th><th style="width:190px">Proxies For</th><th style="width:260px">Key Caveat</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Courses menu rate</strong></td><td><code style="font-size:10px">courses_menu_click</code></td><td><span class="pill pill-navy">Store</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-green">Primary</span></td><td>store.padi.com purchase CVR</td><td style="font-size:11px">Click ≠ purchase. Pair with store-side data.</td></tr>
+            <tr><td><strong>Recommendation CTR</strong></td><td><code style="font-size:10px">recommendation_click</code></td><td><span class="pill pill-navy">Store</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-green">Primary</span></td><td>eLearning purchase CVR</td><td style="font-size:11px">Denominator = sessions that saw the block.</td></tr>
+            <tr><td><strong>Education page view rate</strong></td><td><code style="font-size:10px">education_page_view</code></td><td><span class="pill pill-teal">Education</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-gold">Secondary</span></td><td>Course purchase CVR</td><td style="font-size:11px">Broad — includes low-intent browsing.</td></tr>
+            <tr><td><strong>Dive shops nearby rate</strong></td><td><code style="font-size:10px">dive_shops_nearby_view</code></td><td><span class="pill pill-navy">Dive Shops</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-green">Primary</span></td><td>Dive shop lead (new diver)</td><td style="font-size:11px">Geo permission required.</td></tr>
+            <tr><td><strong>View dive center detail</strong></td><td><code style="font-size:10px">view_dive_center_detail</code></td><td><span class="pill pill-navy">Dive Shops</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-green">Primary</span></td><td>Dive center contact / enrolment</td><td style="font-size:11px">Last trackable step before offline. BOFU proxy.</td></tr>
+            <tr><td><strong>View dive shop page rate</strong></td><td><code style="font-size:10px">view_dive_shop_page</code></td><td><span class="pill pill-navy">Dive Shops</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-gold">Secondary</span></td><td>Dive center lead / enrolment</td><td style="font-size:11px">Pair with view_dive_center_detail.</td></tr>
+            <tr><td><strong>Exploration page view rate</strong></td><td><code style="font-size:10px">exploration_page_view</code></td><td><span class="pill pill-teal">Exploration</span></td><td><span class="pill pill-red">High</span></td><td><span class="pill pill-gold">Secondary</span></td><td>Travel booking / dive shop lead</td><td style="font-size:11px">Long path to conversion.</td></tr>
+            <tr><td><strong>Course locator view rate</strong></td><td><code style="font-size:10px">course_locator_view</code></td><td><span class="pill pill-navy">Dive Shops</span></td><td><span class="pill pill-gold">Medium</span></td><td><span class="pill pill-green">Primary</span></td><td>Dive shop lead / course purchase</td><td style="font-size:11px">Tool engagement ≠ shop contact.</td></tr>
+            <tr><td><strong>Professional activities rate</strong></td><td><code style="font-size:10px">pro_page_view</code></td><td><span class="pill pill-navy">Pro</span></td><td><span class="pill pill-gold">Medium</span></td><td><span class="pill pill-green">Primary</span></td><td>IDC / DM enrolment</td><td style="font-size:11px">Small segment — longer test needed.</td></tr>
+            <tr><td><strong>Diving In rate</strong></td><td><code style="font-size:10px">diving_in_page_view</code></td><td><span class="pill pill-teal">Exploration</span></td><td><span class="pill pill-gold">Medium</span></td><td><span class="pill pill-gold">Secondary</span></td><td>Exploration depth → travel</td><td style="font-size:11px">Denominator = exploration sessions only.</td></tr>
+            <tr><td><strong>Dive sites nearby rate</strong></td><td><code style="font-size:10px">dive_sites_nearby_view</code></td><td><span class="pill pill-navy">Dive Shops</span></td><td><span class="pill pill-gold">Medium</span></td><td><span class="pill pill-gold">Secondary</span></td><td>Travel visit / exploration depth</td><td style="font-size:11px">Low direct commercial value.</td></tr>
+            <tr><td><strong>Conservation view rate</strong></td><td><code style="font-size:10px">conservation_page_view</code></td><td><span class="pill pill-grey">Conservation</span></td><td><span class="pill pill-grey">Low</span></td><td><span class="pill pill-grey">Guardrail</span></td><td>Brand engagement</td><td style="font-size:11px">Guardrail only — do not use as primary.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ EXPERIMENT HIERARCHY ════ -->
+  <div id="experiments" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Experiment Metric Hierarchy</h2><p>Primary / Secondary / Guardrail metric assignment per experiment type</p><div class="accent-line"></div></div></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Experiment Framework</div><div class="card-badge">8 Experiment Types</div></div>
+      <div class="scroll-x">
+        <table class="data-table">
+          <thead><tr><th style="width:190px">Experiment Type</th><th>What You're Testing</th><th>🎯 Primary</th><th>📊 Secondary</th><th>🛡 Guardrail</th><th>Downstream CVR Proxy</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Homepage / Hero CTA</strong></td><td style="font-size:12px">CTA copy, layout, hero banner</td><td><span class="pill pill-green">courses_menu_click</span></td><td style="font-size:11px">education_page_view<br>exploration_page_view</td><td><span class="pill pill-grey">conservation_page_view</span></td><td style="font-size:11px">store.padi.com purchase CVR</td></tr>
+            <tr><td><strong>Nav / Header Redesign</strong></td><td style="font-size:12px">Menu structure, label changes</td><td><span class="pill pill-green">courses_menu_click</span></td><td style="font-size:11px">education_page_view, pro_page_view</td><td><span class="pill pill-grey">dive_shops_nearby_view</span></td><td style="font-size:11px">store.padi.com purchase CVR</td></tr>
+            <tr><td><strong>Course Detail Page</strong></td><td style="font-size:12px">CTA, social proof, pricing layout</td><td><span class="pill pill-green">courses_menu_click / recommendation_click</span></td><td style="font-size:11px">education_page_view</td><td><span class="pill pill-grey">conservation_page_view</span></td><td style="font-size:11px">store.padi.com eLearning purchase</td></tr>
+            <tr><td><strong>Recommendation Block</strong></td><td style="font-size:12px">Design, course selection, placement</td><td><span class="pill pill-green">recommendation_click</span></td><td style="font-size:11px">courses_menu_click</td><td><span class="pill pill-grey">education_page_view</span></td><td style="font-size:11px">store.padi.com course purchase</td></tr>
+            <tr><td><strong>Find a Dive Shop</strong></td><td style="font-size:12px">Map UX, filters, geo-CTA entry</td><td><span class="pill pill-green">dive_shops_nearby_view</span></td><td style="font-size:11px">view_dive_shop_page, view_dive_center_detail</td><td><span class="pill pill-grey">courses_menu_click</span></td><td style="font-size:11px">Dive center contact / new diver lead</td></tr>
+            <tr><td><strong>Dive Shop Listing</strong></td><td style="font-size:12px">Card layout, filter design</td><td><span class="pill pill-green">view_dive_center_detail</span></td><td style="font-size:11px">course_locator_view</td><td><span class="pill pill-grey">dive_sites_nearby_view</span></td><td style="font-size:11px">Dive center lead / enrolment</td></tr>
+            <tr><td><strong>Start Teaching Page</strong></td><td style="font-size:12px">Headline, value prop, IDC/DM CTA</td><td><span class="pill pill-green">pro_page_view</span></td><td style="font-size:11px">education_page_view</td><td><span class="pill pill-grey">conservation_page_view</span></td><td style="font-size:11px">IDC / DM enrolment submission</td></tr>
+            <tr><td><strong>Exploration Section</strong></td><td style="font-size:12px">Content layout, diving-in CTAs</td><td><span class="pill pill-green">exploration_page_view</span></td><td style="font-size:11px">diving_in_page_view, dive_sites_nearby_view</td><td><span class="pill pill-grey">courses_menu_click</span></td><td style="font-size:11px">travel.padi.com booking / dive shop lead</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="insight-box gold" style="margin-top:16px"><div class="insight-label">⚠ Segment-Level Analysis Required</div><div class="insight-text">Homepage and Nav experiments affect all 3 user segments simultaneously. Always run segment-level analysis — uplift on courses_menu_click could mask a decline in pro_page_view for the Start Teaching segment.</div></div>
+  </div>
+
+  <!-- ════ METRICS BASELINE ════ -->
+  <div id="baseline" class="section">
+    <div class="page-header"><div class="page-header-left"><h2>Current Metrics Baseline</h2><p>Simulated baseline rates · GA4 Live where available · Status tracking</p><div class="accent-line"></div></div></div>
+    <div class="stat-grid stat-grid-3 mb-24">
+      <div class="stat-card green"><div class="stat-label">Courses Menu Rate</div><div class="stat-value green">13.41%</div><div class="stat-sub">Highest-intent nav action · Target ≥12%</div><span class="status-chip chip-simulated">Simulated</span></div>
+      <div class="stat-card"><div class="stat-label">Education Page View Rate</div><div class="stat-value">9.92%</div><div class="stat-sub">~1 in 10 sessions touch education</div><span class="status-chip chip-simulated">Simulated</span></div>
+      <div class="stat-card"><div class="stat-label">Dive Shops Nearby Rate</div><div class="stat-value">9.95%</div><div class="stat-sub">High reach · low completion</div><span class="status-chip chip-simulated">Simulated</span></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Full Metrics Baseline</div><div class="card-badge">12 Metrics · 🟢 ≥5% · 🟡 1–4.99% · 🔴 &lt;1%</div></div>
+      <div class="card-body">
+        <table class="data-table">
+          <thead><tr><th>#</th><th style="width:200px">Metric</th><th>GA4 Event</th><th>Rate</th><th>Status</th><th>Role</th><th style="width:280px">Benchmark / Context</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Courses menu rate</strong></td><td><code style="font-size:10px">courses_menu_click</code></td><td><span class="rate-dot dot-green"></span><strong style="color:#00a361">13.41%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-green">Primary</span></td><td style="font-size:12px">Strong. Highest-intent nav. Target ≥12% after redesign.</td></tr>
+            <tr><td>2</td><td><strong>Education page view rate</strong></td><td><code style="font-size:10px">education_page_view</code></td><td><span class="rate-dot dot-green"></span><strong style="color:#00a361">9.92%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Healthy baseline for funnel entry. Watch if nav changes push below 8%.</td></tr>
+            <tr><td>3</td><td><strong>Dive shops nearby rate</strong></td><td><code style="font-size:10px">dive_shops_nearby_view</code></td><td><span class="rate-dot dot-green"></span><strong style="color:#00a361">9.95%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-green">Primary</span></td><td style="font-size:12px">High reach (~10%) but historically very high abandonment.</td></tr>
+            <tr><td>4</td><td><strong>Exploration page view rate</strong></td><td><code style="font-size:10px">exploration_page_view</code></td><td><span class="rate-dot dot-gold"></span><strong style="color:#b07800">1.80%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Low — significant opportunity via nav or homepage.</td></tr>
+            <tr><td>5</td><td><strong>Conservation view rate</strong></td><td><code style="font-size:10px">conservation_page_view</code></td><td><span class="rate-dot dot-gold"></span><strong style="color:#b07800">0.32%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-grey">Guardrail</span></td><td style="font-size:12px">Expected low. Ensure experiments don't push to near-zero.</td></tr>
+            <tr><td>6</td><td><strong>Dive sites nearby rate</strong></td><td><code style="font-size:10px">dive_sites_nearby_view</code></td><td><span class="rate-dot dot-red"></span><strong style="color:var(--red)">0.35%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Very low. Dive site discovery is hard to reach.</td></tr>
+            <tr><td>7</td><td><strong>Course locator view rate</strong></td><td><code style="font-size:10px">course_locator_view</code></td><td><span class="rate-dot dot-red"></span><strong style="color:var(--red)">0.21%</strong></td><td><span class="status-chip chip-simulated">Simulated</span></td><td><span class="pill pill-green">Primary</span></td><td style="font-size:12px">Red flag — 0.21% for a high-intent action. Buried in UX.</td></tr>
+            <tr><td>8</td><td><strong>Recommendation CTR</strong></td><td><code style="font-size:10px">recommendation_click</code></td><td><strong style="color:var(--grey-text)">—</strong></td><td><span class="status-chip chip-pending">Pending</span></td><td><span class="pill pill-green">Primary</span></td><td style="font-size:12px">Needs GTM implementation. Expected 5–15% of sessions that see the block.</td></tr>
+            <tr><td>9</td><td><strong>View dive shop page rate</strong></td><td><code style="font-size:10px">view_dive_shop_page</code></td><td><strong style="color:var(--grey-text)">—</strong></td><td><span class="status-chip chip-pending">Pending</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Not yet captured. Partially via GA4 page_view on /dive-shops/.</td></tr>
+            <tr><td>10</td><td><strong>View dive center detail rate</strong></td><td><code style="font-size:10px">view_dive_center_detail</code></td><td><strong style="color:var(--grey-text)">—</strong></td><td><span class="status-chip chip-pending">Pending</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Key BOFU signal. Needs GTM event on dive center page load.</td></tr>
+            <tr><td>11</td><td><strong>Diving In rate</strong></td><td><code style="font-size:10px">diving_in_page_view</code></td><td><strong style="color:var(--grey-text)">—</strong></td><td><span class="status-chip chip-pending">Pending</span></td><td><span class="pill pill-gold">Secondary</span></td><td style="font-size:12px">Not yet captured. Partially via page_view on /diving-in/.</td></tr>
+            <tr><td>12</td><td><strong>Professional activities rate</strong></td><td><code style="font-size:10px">pro_page_view</code></td><td><strong style="color:var(--grey-text)">—</strong></td><td><span class="status-chip chip-pending">Pending</span></td><td><span class="pill pill-green">Primary</span></td><td style="font-size:12px">Not yet captured. Partially via page_view on /education/professional*.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="insight-box gold"><div class="insight-label">⚠ 5 Events Pending GTM</div><div class="insight-text">recommendation_click, view_dive_shop_page, view_dive_center_detail, diving_in_page_view, pro_page_view — all require custom GTM events before use in experiment reporting.</div></div>
+      <div class="insight-box green"><div class="insight-label">✓ 7 Metrics Available Today</div><div class="insight-text">courses_menu_click, education_page_view, exploration_page_view, dive_shops_nearby_view, dive_sites_nearby_view, course_locator_view, and conservation_page_view available today via GA4 page_view filtering.</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="tip" id="tip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// FUNNEL DATA
+// ═══════════════════════════════════════════════════
+const FUNNELS = {
+  cc: {
+    total: [
+      {name:'PADI.com',                n:3294230, highest:false},
+      {name:'Certification Cards',     n:13047,   highest:false},
+      {name:'PDP Certification Cards', n:6202,    highest:false},
+      {name:'Add to Cart',             n:1449,    highest:false},
+      {name:'Purchase',                n:742,     highest:false},
+    ],
+    desktop: [
+      {name:'PADI.com',                n:1173428, highest:false},
+      {name:'Certification Cards',     n:5463,    highest:false},
+      {name:'PDP Certification Cards', n:2692,    highest:false},
+      {name:'Add to Cart',             n:675,     highest:false},
+      {name:'Purchase',                n:372,     highest:false},
+    ],
+    mobile: [
+      {name:'PADI.com',                n:2054307, highest:false},
+      {name:'Certification Cards',     n:7421,    highest:false},
+      {name:'PDP Certification Cards', n:3421,    highest:false},
+      {name:'Add to Cart',             n:755,     highest:false},
+      {name:'Purchase',                n:362,     highest:false},
+    ],
+  },
+  t1: {
+    total: [
+      {name:'PADI.com',               n:3272099, highest:false},
+      {name:'Exploration Page',       n:32285,   highest:false},
+      {name:'Diving In',              n:17497,   highest:false},
+      {name:'Dive Shop',              n:6242,    highest:false},
+      {name:'PDP — Adventure Detail', n:47746,   highest:true},
+      {name:'Add to Cart',            n:61408,   highest:false},
+      {name:'Purchase',               n:3177,    highest:false},
+    ],
+    desktop: [
+      {name:'PADI.com',               n:1163743, highest:false},
+      {name:'Exploration Page',       n:24942,   highest:false},
+      {name:'Diving In',              n:13960,   highest:false},
+      {name:'Dive Shop',              n:5361,    highest:false},
+      {name:'PDP — Adventure Detail', n:18384,   highest:true},
+      {name:'Add to Cart',            n:26466,   highest:false},
+      {name:'Purchase',               n:1970,    highest:false},
+    ],
+    mobile: [
+      {name:'PADI.com',               n:2044724, highest:false},
+      {name:'Exploration Page',       n:6309,    highest:false},
+      {name:'Diving In',              n:3057,    highest:false},
+      {name:'Dive Shop',              n:742,     highest:false},
+      {name:'PDP — Adventure Detail', n:28977,   highest:true},
+      {name:'Add to Cart',            n:33726,   highest:false},
+      {name:'Purchase',               n:1131,    highest:false},
+    ],
+  },
+  xd: {
+    total: [
+      {name:'PADI.com', n:3172190, highest:false},
+      {name:'Courses PLP — Store', n:938491, highest:true},
+      {name:'Add to Cart', n:77249, highest:false},
+      {name:'Purchase', n:21207, highest:false},
+    ],
+    desktop: [
+      {name:'PADI.com', n:1118762, highest:false},
+      {name:'Courses PLP — Store', n:343699, highest:true},
+      {name:'Add to Cart', n:35695, highest:false},
+      {name:'Purchase', n:11113, highest:false},
+    ],
+    mobile: [
+      {name:'PADI.com', n:1983969, highest:false},
+      {name:'Courses PLP — Store', n:578860, highest:true},
+      {name:'Add to Cart', n:41182, highest:false},
+      {name:'Purchase', n:9803, highest:false},
+    ],
+  },
+  sd: {
+    total: [
+      {name:'store.padi.com', n:1790906, highest:false},
+      {name:'PLP (Product List Page)', n:704029, highest:false},
+      {name:'PDP (Product Detail Page)', n:332702, highest:false},
+      {name:'Add to Cart (ATC)', n:64548, highest:false},
+      {name:'Purchase', n:23720, highest:false},
+    ],
+    desktop: [
+      {name:'store.padi.com', n:661245, highest:false},
+      {name:'PLP', n:298177, highest:false},
+      {name:'PDP', n:151581, highest:false},
+      {name:'Add to Cart', n:33699, highest:false},
+      {name:'Purchase', n:14046, highest:false},
+    ],
+    mobile: [
+      {name:'store.padi.com', n:1107334, highest:false},
+      {name:'PLP', n:394659, highest:false},
+      {name:'PDP', n:176528, highest:false},
+      {name:'Add to Cart', n:30560, highest:false},
+      {name:'Purchase', n:9484, highest:false},
+    ],
+  },
+  t2: {
+    total: [
+      {name:'Dive Shops Nearby', n:317694, highest:false},
+      {name:'Dive Shop Listing', n:618979, highest:true},
+      {name:'Adventure PDP', n:104115, highest:false},
+      {name:'Add to Cart', n:94746, highest:false},
+      {name:'Purchase', n:5138, highest:false},
+    ],
+    desktop: [
+      {name:'Dive Shops Nearby', n:55107, highest:false},
+      {name:'Dive Shop Listing', n:257638, highest:true},
+      {name:'Adventure PDP', n:45988, highest:false},
+      {name:'Add to Cart', n:44254, highest:false},
+      {name:'Purchase', n:3304, highest:false},
+    ],
+    mobile: [
+      {name:'Dive Shops Nearby', n:256612, highest:false},
+      {name:'Dive Shop Listing', n:354024, highest:true},
+      {name:'Adventure PDP', n:56661, highest:false},
+      {name:'Add to Cart', n:49281, highest:false},
+      {name:'Purchase', n:1725, highest:false},
+    ],
+  },
+  ts: {
+    total: [
+      {name:'travel.padi.com', n:1251880, highest:false},
+      {name:'PLP', n:927258, highest:false},
+      {name:'PDP', n:328303, highest:false},
+      {name:'Add to Cart', n:90489, highest:false},
+      {name:'Purchase', n:6805, highest:false},
+    ],
+    desktop: [
+      {name:'travel.padi.com', n:491940, highest:false},
+      {name:'PLP', n:365627, highest:false},
+      {name:'PDP', n:151276, highest:false},
+      {name:'Add to Cart', n:44437, highest:false},
+      {name:'Purchase', n:4522, highest:false},
+    ],
+    mobile: [
+      {name:'travel.padi.com', n:737879, highest:false},
+      {name:'PLP', n:546203, highest:false},
+      {name:'PDP', n:172537, highest:false},
+      {name:'Add to Cart', n:44217, highest:false},
+      {name:'Purchase', n:2154, highest:false},
+    ],
+  },
+};
+
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(1)+'K';return n.toString();}
+
+function renderFunnel(containerId, funnelKey, device) {
+  const steps = FUNNELS[funnelKey][device];
+  const baseN  = steps[0].n;
+  const maxN   = Math.max(...steps.map(s=>s.n));
+  let html = '';
+
+  // Find highest drop-off step (biggest % drop between consecutive)
+  let highestDropIdx = 1;
+  let highestDropPct = 0;
+  for(let i=1;i<steps.length;i++){
+    const drop = (steps[i-1].n - steps[i].n) / steps[i-1].n * 100;
+    if(drop > highestDropPct){highestDropPct=drop;highestDropIdx=i;}
+  }
+
+  steps.forEach((s, i) => {
+    const barW   = Math.max(4, (s.n / maxN) * 100);
+    const cvr    = i === 0 ? null : (s.n / steps[0].n * 100);
+    const cvrCls = cvr === null ? '' : cvr >= 10 ? 'good' : cvr >= 3 ? 'warn' : 'bad';
+    const isHighest = (i === highestDropIdx);
+
+    html += `<div class="ga4-step">
+      <div class="ga4-step-header">
+        <div class="ga4-step-left">
+          <div class="ga4-step-num${isHighest?' highest':''}">${i+1}</div>
+          <div class="ga4-step-name">${s.name}${isHighest?'<span class="ga4-step-badge">highest drop-off</span>':''}</div>
+        </div>
+        <div class="ga4-step-right">
+          <span class="users">${fmt(s.n)} users</span>
+          ${cvr!==null?`<span class="cvr ${cvrCls}">${cvr.toFixed(2)}% completion</span>`:`<span style="color:var(--grey-text);font-size:12px">entry step</span>`}
+        </div>
+      </div>
+      <div class="ga4-bar-row">
+        <div class="ga4-bar-fill" style="width:${barW}%">
+          <span class="ga4-bar-label">${fmt(s.n)} users</span>
+        </div>
+      </div>`;
+
+    if(i < steps.length - 1) {
+      const abandoned  = steps[i].n - steps[i+1].n;
+      const abandonPct = (abandoned / steps[i].n * 100).toFixed(1);
+      const proceedPct = (100 - parseFloat(abandonPct)).toFixed(1);
+      html += `<div class="ga4-drop-row">
+        <span class="drop-arrow">↓</span>
+        <span class="drop-pct">${abandonPct}% abandoned</span>
+        <span>·</span>
+        <span class="drop-users">${fmt(Math.abs(abandoned))} users dropped</span>
+        <span>·</span>
+        <span class="proceed">${proceedPct}% proceeded</span>
+      </div>`;
+    }
+    html += '</div>';
+  });
+
+  document.getElementById(containerId).innerHTML = html;
+}
+
+// Track device per funnel
+const funnelDevices = {cc:'total', cc2:'total', t1:'total', xd:'total', sd:'total', t2:'total', ts:'total'};
+
+function switchFunnel(funnelKey, device, btn) {
+  funnelDevices[funnelKey] = device;
+  btn.parentElement.querySelectorAll('.fdt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const containerMap = {cc:'funnel-cc', cc2:'funnel-cc2', t1:'funnel-t1', xd:'funnel-xd', sd:'funnel-sd', t2:'funnel-t2', ts:'funnel-ts'};
+  const dataKeyMap   = {cc:'cc', cc2:'cc', t1:'t1', xd:'xd', sd:'sd', t2:'t2', ts:'ts'};
+  renderFunnel(containerMap[funnelKey], dataKeyMap[funnelKey], device);
+}
+
+// Initial render all funnels
+renderFunnel('funnel-cc','cc','total');
+renderFunnel('funnel-t1','t1','total');
+renderFunnel('funnel-xd','xd','total');
+renderFunnel('funnel-sd','sd','total');
+renderFunnel('funnel-t2','t2','total');
+renderFunnel('funnel-ts','ts','total');
+
+// ═══════════════════════════════════════════════════
+// PATH EXPLORATION DATA
+// ═══════════════════════════════════════════════════
+const PATH_DATA = {
+  nearby: {
+    title: 'From: /dive-shops/nearby/',
+    sub: '366,163 users — Step 1 · Top next destinations · Hover ribbon to explore Step 3',
+    stats: [
+      {l:'Starting Users',     v:'366,163', s:'Step 1 entry'},
+      {l:'Return to Homepage', v:'1.9%',    s:'6,923 users — loop back'},
+      {l:'Dive Sites Nearby',  v:'1.3%',    s:'4,873 — forward intent'},
+      {l:'Course Locator',     v:'1.1%',    s:'4,051 — forward intent'},
+    ],
+    source: {name:'/dive-shops/nearby/', n:366163},
+    step2: [
+      {name:'Homepage',            n:6923,  type:'return',  col:'#c8102e'},
+      {name:'Dive Sites Nearby',   n:4873,  type:'forward', col:'#00b4d8'},
+      {name:'Course Locator',      n:4051,  type:'forward', col:'#00c875'},
+      {name:'PADI Club',           n:2371,  type:'forward', col:'#7c5cbf'},
+      {name:'Open Water Course',   n:1776,  type:'forward', col:'#4a72d4'},
+      {name:'Exit / Other',        n:346169,type:'exit',    col:'#d0d8ec'},
+    ],
+    step3:{
+      'Homepage':[
+        {name:'Dive Shops Nearby (retry)', n:1283, col:'#00b4d8'},
+        {name:'Learn to Dive',             n:142,  col:'#00c875'},
+        {name:'Certifications',            n:123,  col:'#4a72d4'},
+        {name:'Search',                    n:113,  col:'#7c5cbf'},
+      ],
+      'Dive Sites Nearby':[
+        {name:'Dive Shops Nearby', n:1163, col:'#4a72d4'},
+        {name:'Course Locator',    n:490,  col:'#00c875'},
+        {name:'Homepage',          n:94,   col:'#c8102e'},
+      ],
+      'Course Locator':[
+        {name:'Dive Shops Nearby', n:849,  col:'#4a72d4'},
+        {name:'Open Water Course', n:217,  col:'#00c875'},
+        {name:'Homepage',          n:142,  col:'#c8102e'},
+        {name:'Dive Sites Nearby', n:131,  col:'#00b4d8'},
+      ],
+    },
+    insights:[
+      {cls:'red',  l:'⚠ Loop-back Signal',  t:'<strong>1.9% bounce back to Homepage</strong> — the #1 next action from Dive Shops Nearby. The tool fails to satisfy intent.'},
+      {cls:'navy', l:'→ Best Forward Paths', t:'<strong>Dive Sites Nearby & Course Locator</strong> are the most meaningful downstream steps — both signal active exploration intent.'},
+      {cls:'green',l:'✓ Huge Opportunity',   t:'<strong>94.6% exit or scatter</strong> without a meaningful next step. Improving nearby tool UX could unlock major funnel entry.'},
+    ],
+  },
+  education: {
+    title: 'From: /education/continue-learning',
+    sub: '22,330 users — Step 1 · Cross-domain paths to store · Hover to explore',
+    stats: [
+      {l:'Starting Users',    v:'22,330', s:'Step 1 entry'},
+      {l:'Go to Store (any)', v:'56.2%',  s:'12,548 → store.padi.com'},
+      {l:'Homepage Return',   v:'39.0%',  s:'8,701 users — leak'},
+      {l:'Divemaster Route',  v:'10.8%',  s:'2,415 users'},
+    ],
+    source:{name:'/education/continue-learning', n:22330},
+    step2:[
+      {name:'All Courses — store',         n:10477, type:'forward', col:'#17b897'},
+      {name:'Courses (AOW) — store',       n:10116, type:'forward', col:'#00c875'},
+      {name:'Homepage',                    n:8701,  type:'return',  col:'#c8102e'},
+      {name:'Divemaster — store',          n:2415,  type:'forward', col:'#4a72d4'},
+      {name:'Intro Divemaster — padi.com', n:2396,  type:'forward', col:'#7c5cbf'},
+      {name:'Enriched Air — store',        n:2006,  type:'forward', col:'#00b4d8'},
+      {name:'Education section',           n:1729,  type:'forward', col:'#e07b00'},
+    ],
+    step3:{},
+    insights:[
+      {cls:'green',l:'✓ Strongest Commercial Bridge', t:'<strong>56.2% navigate to store.padi.com course pages</strong> — one of the highest-value commercial pathways on padi.com.'},
+      {cls:'red',  l:'⚠ Homepage Leak',               t:'<strong>39% return to Homepage</strong> before completing course selection. Stronger CTA anchoring could recapture this.'},
+      {cls:'navy', l:'→ Course Preference Signal',     t:'<strong>AOW and Divemaster dominate</strong> course selection. Recommendation blocks should prioritise these two.'},
+    ],
+  },
+  homepage: {
+    title: 'From: Homepage',
+    sub: '2,014,762 sessions — Step 1 · Top 5 onward destinations · Hover to explore Step 3',
+    stats: [
+      {l:'Starting Users',     v:'2.01M',  s:'Homepage sessions'},
+      {l:'Continue Learning',  v:'0.92%',  s:'18,528 — top destination'},
+      {l:'Dive Shops Nearby',  v:'0.91%',  s:'18,255 users'},
+      {l:'Exploration',        v:'0.64%',  s:'12,859 users'},
+    ],
+    source:{name:'Home page', n:2014762},
+    step2:[
+      {name:'Continue Learning',  n:18528, type:'forward', col:'#00c875'},
+      {name:'Dive Shops Nearby',  n:18255, type:'forward', col:'#00b4d8'},
+      {name:'Search',             n:13400, type:'forward', col:'#7c5cbf'},
+      {name:'Exploration',        n:12859, type:'forward', col:'#17b897'},
+      {name:'Education',          n:10759, type:'forward', col:'#4a72d4'},
+    ],
+    step3:{
+      'Continue Learning':[
+        {name:'Homepage (return)',    n:3226, col:'#c8102e'},
+        {name:'AOW — store',          n:2419, col:'#00c875'},
+        {name:'All Courses — store',  n:2382, col:'#17b897'},
+        {name:'Enriched Air — store', n:528,  col:'#4a72d4'},
+        {name:'Education section',    n:305,  col:'#e07b00'},
+      ],
+      'Dive Shops Nearby':[
+        {name:'Homepage (return)',    n:1589, col:'#c8102e'},
+        {name:'Dive Sites Nearby',   n:418,  col:'#00b4d8'},
+        {name:'Course Locator',      n:260,  col:'#00c875'},
+        {name:'Dive Shops Cozumel',  n:134,  col:'#4a72d4'},
+        {name:'Dive Shops Bali',     n:131,  col:'#7c5cbf'},
+      ],
+      'Exploration':[
+        {name:'Dive Resorts — travel', n:1152, col:'#17b897'},
+        {name:'Homepage (return)',     n:595,  col:'#c8102e'},
+        {name:'Diving in Caribbean',   n:383,  col:'#4a72d4'},
+        {name:'Liveaboards — travel',  n:319,  col:'#00b4d8'},
+        {name:'Dive Shops Nearby',     n:284,  col:'#00c875'},
+      ],
+      'Education':[
+        {name:'Courses — store',      n:1924, col:'#00c875'},
+        {name:'Homepage (return)',    n:1385, col:'#c8102e'},
+        {name:'Learn to Dive',        n:847,  col:'#4a72d4'},
+        {name:'Continue Learning',    n:766,  col:'#17b897'},
+        {name:'Open Water Course',    n:506,  col:'#7c5cbf'},
+      ],
+      'Search':[
+        {name:'Homepage (return)',        n:3027, col:'#c8102e'},
+        {name:'Dive Shops Nearby',        n:675,  col:'#00b4d8'},
+        {name:'Downloads',                n:485,  col:'#7c5cbf'},
+        {name:'Dive Resorts — travel',    n:356,  col:'#17b897'},
+        {name:'Courses — store',          n:289,  col:'#00c875'},
+      ],
+    },
+    insights:[
+      {cls:'navy', l:'→ Continue Learning Leads',  t:'<strong>Continue Learning is the #1 destination from Homepage</strong> (18,528) — but 3,226 of those users immediately bounce back to Homepage.'},
+      {cls:'red',  l:'⚠ Search Loop-back',          t:'<strong>Search has the worst return rate</strong> — 3,027 of 13,400 Search users (22.6%) loop back to Homepage. Search is failing to resolve intent.'},
+      {cls:'green',l:'✓ Exploration → Travel',      t:'<strong>Exploration is the strongest travel gateway</strong> — 1,152 users go directly to Dive Resorts on travel.padi.com from the Exploration page.'},
+    ],
+  },
+  freeintro: {
+    title: 'From: /dive/free-intro-open-water-course',
+    sub: '22,155 users — Step 1 · High commercial intent · Hover to explore Step 3',
+    stats: [
+      {l:'Starting Users',    v:'22,155', s:'Free intro course page'},
+      {l:'Go to Divemaster',  v:'33.7%',  s:'7,458 → store.padi.com'},
+      {l:'Continue Learning', v:'21.3%',  s:'4,723 users'},
+      {l:'Homepage Return',   v:'1.6%',   s:'356 users — very low leak'},
+    ],
+    source:{name:'/dive/free-intro-open-water-course', n:22155},
+    step2:[
+      {name:'Divemaster — store',  n:7458, type:'forward', col:'#4a72d4'},
+      {name:'Continue Learning',   n:4723, type:'forward', col:'#00c875'},
+      {name:'PADI Club — store',   n:450,  type:'forward', col:'#7c5cbf'},
+      {name:'Dive Together',       n:394,  type:'forward', col:'#17b897'},
+      {name:'Homepage',            n:356,  type:'return',  col:'#c8102e'},
+    ],
+    step3:{
+      'Divemaster — store':[
+        {name:'Free Intro (return)', n:1064, col:'#4a72d4'},
+      ],
+      'Continue Learning':[
+        {name:'Continue Learning (self)', n:284, col:'#00c875'},
+        {name:'Dive Together',            n:91,  col:'#17b897'},
+        {name:'PADI Club — store',        n:19,  col:'#7c5cbf'},
+      ],
+      'PADI Club — store':[
+        {name:'Free Intro (return)', n:96, col:'#4a72d4'},
+        {name:'Continue Learning',   n:62, col:'#00c875'},
+        {name:'Divemaster — store',  n:51, col:'#7c5cbf'},
+      ],
+      'Dive Together':[
+        {name:'Divemaster — store',  n:21, col:'#4a72d4'},
+        {name:'Free Intro (return)', n:16, col:'#17b897'},
+        {name:'Continue Learning',   n:13, col:'#00c875'},
+      ],
+    },
+    insights:[
+      {cls:'green',l:'✓ Strong Divemaster Intent',  t:'<strong>33.7% go directly to the Divemaster course on store.padi.com</strong> — the free intro page is a high-intent commercial bridge for progression divers.'},
+      {cls:'navy', l:'→ Lowest Loop-back Rate',      t:'<strong>Only 1.6% return to Homepage</strong> — this page has the lowest loop-back rate of all starting points, strongly satisfying intent.'},
+      {cls:'red',  l:'⚠ Divemaster Loop',            t:'<strong>1,064 Divemaster store visitors loop back</strong> to the free intro page — possible price friction or uncertainty about the DM pathway.'},
+    ],
+  },
+};
+
+let curPath = 'nearby';
+let hoveredFlow = null;
+
+function switchPath(v) {
+  curPath = v;
+  hoveredFlow = null;
+  ['nearby','education','homepage','freeintro'].forEach(k=>{
+    document.getElementById('ptab-'+k).classList.toggle('active', k===v);
+  });
+  renderPath();
+}
+
+function renderPath() {
+  const d = PATH_DATA[curPath];
+  document.getElementById('path-card-title').textContent = d.title;
+  document.getElementById('path-card-sub').textContent   = d.sub;
+
+  document.getElementById('path-stats').innerHTML = d.stats.map(s=>`
+    <div class="psc"><div class="psc-l">${s.l}</div><div class="psc-v">${s.v}</div><div class="psc-s">${s.s}</div></div>
+  `).join('');
+
+  document.getElementById('path-insights').innerHTML = d.insights.map(i=>`
+    <div class="path-ib ${i.cls}"><div class="path-ib-l">${i.l}</div><div class="path-ib-t">${i.t}</div></div>
+  `).join('');
+
+  drawSankey(d);
+}
+
+function drawSankey(d) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const wrap = document.getElementById('path-sankey-wrap');
+  const svgEl = document.getElementById('path-sankey-svg');
+  svgEl.innerHTML = '';
+
+  const TW = Math.max(wrap.clientWidth - 20, 900);
+  const TH = 680;
+  const ML = 170, MR = 200, MT = 30, MB = 30;
+  const W = TW - ML - MR;
+  const H = TH - MT - MB;
+  const NODE_W = 16, PAD = 10;
+
+  svgEl.setAttribute('width', TW);
+  svgEl.setAttribute('height', TH);
+
+  // Build nodes from source + step2 + step3
+  const nodeMap = {};
+  const addNode = (name, col, color) => {
+    if (!nodeMap[name]) nodeMap[name] = { name, col, color, inVal:0, outVal:0, sLinks:[], tLinks:[], x0:0,y0:0,y1:0 };
+  };
+
+  // Source node col 0
+  addNode(d.source.name, 0, '#003087');
+
+  // Step 2 nodes col 1
+  const colColors = { return:'#c8102e', forward:'#5B7FE8', exit:'#b0bcd6' };
+  d.step2.forEach(f => addNode(f.name, 1, f.col));
+
+  // Step 3 nodes col 2
+  Object.values(d.step3||{}).flat().forEach(f => addNode(f.name, 2, f.col));
+
+  const nodes = Object.values(nodeMap);
+  const maxCol = Math.max(...nodes.map(n=>n.col));
+
+  // Build links
+  const links = [];
+  // Source → step2
+  d.step2.forEach(f => {
+    links.push({ si: d.source.name, ti: f.name, value: f.n,
+      pct: ((f.n/d.source.n)*100).toFixed(1),
+      isBack: f.type==='return', color: f.col });
+  });
+  // Step2 → step3
+  Object.entries(d.step3||{}).forEach(([src, targets]) => {
+    const srcNode = nodes.find(n=>n.name===src);
+    const srcN = srcNode ? (d.step2.find(f=>f.name===src)||{n:1}).n : 1;
+    targets.forEach(f => {
+      links.push({ si: src, ti: f.name, value: f.n,
+        pct: ((f.n/srcN)*100).toFixed(1),
+        isBack: f.name.includes('return') || f.name.includes('Homepage'), color: f.col });
+    });
+  });
+
+  // Accumulate values
+  links.forEach(l => {
+    if(nodeMap[l.si]) nodeMap[l.si].outVal += l.value;
+    if(nodeMap[l.ti]) nodeMap[l.ti].inVal  += l.value;
+    if(nodeMap[l.si]) nodeMap[l.si].sLinks.push(l);
+    if(nodeMap[l.ti]) nodeMap[l.ti].tLinks.push(l);
+  });
+
+  // X positions
+  nodes.forEach(n => { n.x0 = n.col * (W / Math.max(maxCol,1)); });
+
+  // Y layout per column — sqrt scaled, sorted by value desc
+  for(let c=0; c<=maxCol; c++){
+    const col = nodes.filter(n=>n.col===c)
+      .sort((a,b)=>(b.inVal+b.outVal)-(a.inVal+a.outVal));
+    if(!col.length) continue;
+    const vals = col.map(n=>Math.sqrt(Math.max(n.inVal,n.outVal,1)));
+    const total = vals.reduce((a,b)=>a+b,0);
+    const avail = H - PAD*(col.length-1);
+    let y = 0;
+    col.forEach((n,i) => {
+      const h = Math.max(10, (vals[i]/total)*avail);
+      n.y0 = y; n.y1 = y+h; y += h+PAD;
+    });
+  }
+
+  // Link stroke widths — % of source total, min 2 max 40
+  links.forEach(l => {
+    const pctNum = parseFloat(l.pct);
+    l.strokeW = Math.min(40, Math.max(2, 2 + (pctNum/50)*38));
+  });
+
+  // Link y-offset staggering
+  for(let c=0; c<=maxCol; c++){
+    nodes.filter(n=>n.col===c).forEach(n => {
+      const fwd = n.sLinks.filter(l=>!l.isBack).sort((a,b)=>{
+        const ta = nodeMap[a.ti], tb = nodeMap[b.ti];
+        return (ta?ta.y0:0) - (tb?tb.y0:0);
+      });
+      const bck = n.sLinks.filter(l=>l.isBack);
+      let y = n.y0;
+      [...fwd,...bck].forEach(l => { l.y0 = y + l.strokeW/2; y += l.strokeW; });
+    });
+    nodes.filter(n=>n.col===c).forEach(n => {
+      const fwd = n.tLinks.filter(l=>!l.isBack).sort((a,b)=>{
+        const sa = nodeMap[a.si], sb = nodeMap[b.si];
+        return (sa?sa.y0:0) - (sb?sb.y0:0);
+      });
+      const bck = n.tLinks.filter(l=>l.isBack);
+      let y = n.y0;
+      [...fwd,...bck].forEach(l => { l.y1 = y + l.strokeW/2; y += l.strokeW; });
+    });
+  }
+
+  // DEFS — gradients
+  const defs = document.createElementNS(NS,'defs');
+  links.forEach((l,i) => {
+    const sc = nodeMap[l.si]?.color||'#aaa';
+    const tc = nodeMap[l.ti]?.color||'#aaa';
+    const gr = document.createElementNS(NS,'linearGradient');
+    gr.setAttribute('id','sg'+i);
+    gr.setAttribute('gradientUnits','userSpaceOnUse');
+    gr.setAttribute('x1', (nodeMap[l.si]?.x0||0)+NODE_W+ML);
+    gr.setAttribute('x2', (nodeMap[l.ti]?.x0||0)+ML);
+    [[sc,'0%','0.7'],[tc,'100%','0.4']].forEach(([col,off,op]) => {
+      const s = document.createElementNS(NS,'stop');
+      s.setAttribute('offset',off); s.setAttribute('stop-color',col); s.setAttribute('stop-opacity',op);
+      gr.appendChild(s);
+    });
+    defs.appendChild(gr);
+  });
+  svgEl.appendChild(defs);
+
+  const root = document.createElementNS(NS,'g');
+  root.setAttribute('transform',`translate(${ML},${MT})`);
+  svgEl.appendChild(root);
+
+  // Tooltip
+  const tip = document.getElementById('tip');
+
+  function moveTipSankey(e) {
+    tip.style.left = Math.min(e.clientX+20, window.innerWidth-320)+'px';
+    tip.style.top  = Math.max(e.clientY-14, 8)+'px';
+  }
+
+  // DRAW LINKS
+  const sorted = [...links].sort((a,b)=>(a.isBack?1:0)-(b.isBack?1:0));
+  sorted.forEach((l,idx) => {
+    const i = links.indexOf(l);
+    const sn = nodeMap[l.si], tn = nodeMap[l.ti];
+    if(!sn||!tn) return;
+    const x0 = sn.x0 + NODE_W, x1 = tn.x0;
+    const y0 = l.y0, y1 = l.y1;
+    let pathD;
+    if(l.isBack){
+      const arcH = Math.max(60, Math.abs(y0-y1)*0.3+80);
+      pathD = `M${x0},${y0} C${x0},${y0-arcH} ${x1},${y1-arcH} ${x1},${y1}`;
+    } else {
+      const dx = (x1-x0)*0.5;
+      pathD = `M${x0},${y0} C${x0+dx},${y0} ${x1-dx},${y1} ${x1},${y1}`;
+    }
+    const p = document.createElementNS(NS,'path');
+    p.setAttribute('d', pathD);
+    p.setAttribute('stroke', `url(#sg${i})`);
+    p.setAttribute('stroke-width', l.strokeW);
+    p.setAttribute('fill','none');
+    p.setAttribute('opacity', l.isBack?'0.4':'0.55');
+    if(l.isBack) p.setAttribute('stroke-dasharray','7,4');
+    p.style.cursor = 'pointer';
+    p.style.transition = 'opacity .12s, stroke-width .12s';
+
+    p.addEventListener('mouseenter', e => {
+      p.setAttribute('opacity','0.95');
+      p.setAttribute('stroke-width', l.strokeW+4);
+      const badge = l.isBack ? '↩ Return Flow' : '→ Forward Flow';
+      const badgeCol = l.isBack ? '#ffb366' : '#a0b8ff';
+      tip.innerHTML = `
+        <div style="background:rgba(91,127,232,0.2);color:${badgeCol};font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px">${badge}</div>
+        <div style="margin-bottom:6px"><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.8px">From</div><div style="font-size:13px;font-weight:700;color:#e8f0ff">${l.si}</div></div>
+        <div style="margin-bottom:8px"><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.8px">To</div><div style="font-size:13px;font-weight:700;color:#e8f0ff">${l.ti}</div></div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0"/>
+        <div style="display:flex;gap:16px">
+          <div><div style="font-size:20px;font-weight:800;color:#7de8c8">${l.value.toLocaleString()}</div><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.5px">Sessions</div></div>
+          <div><div style="font-size:20px;font-weight:800;color:#ff9f7e">${l.pct}%</div><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.5px">of source</div></div>
+        </div>`;
+      tip.classList.add('on');
+      moveTipSankey(e);
+    });
+    p.addEventListener('mousemove', moveTipSankey);
+    p.addEventListener('mouseleave', () => {
+      p.setAttribute('opacity', l.isBack?'0.4':'0.55');
+      p.setAttribute('stroke-width', l.strokeW);
+      hideTip();
+    });
+    root.appendChild(p);
+  });
+
+  // DRAW NODES + LABELS
+  nodes.forEach(n => {
+    const h = Math.max(10, n.y1-n.y0);
+    const midY = (n.y0+n.y1)/2;
+    const isRight = n.col === maxCol;
+    const lx = isRight ? n.x0+NODE_W+10 : n.x0-10;
+    const anchor = isRight ? 'start' : 'end';
+    const dispVal = Math.max(n.inVal,n.outVal);
+
+    // Node rect
+    const rect = document.createElementNS(NS,'rect');
+    rect.setAttribute('x',n.x0); rect.setAttribute('y',n.y0);
+    rect.setAttribute('width',NODE_W); rect.setAttribute('height',h);
+    rect.setAttribute('fill',n.color); rect.setAttribute('rx','3');
+    rect.style.cursor='pointer';
+    rect.addEventListener('mouseenter',e=>{
+      const pctOfSrc = ((dispVal/d.source.n)*100).toFixed(1);
+      tip.innerHTML=`
+        <div style="background:rgba(100,220,180,0.2);color:#7de8c8;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px">📄 Page</div>
+        <div style="margin-bottom:8px"><div style="font-size:13px;font-weight:700;color:#e8f0ff">${n.name}</div></div>
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0"/>
+        <div style="display:flex;gap:16px">
+          <div><div style="font-size:20px;font-weight:800;color:#7de8c8">${dispVal>=1000?((dispVal/1000).toFixed(1)+'K'):dispVal}</div><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.5px">Sessions</div></div>
+          <div><div style="font-size:20px;font-weight:800;color:#ff9f7e">${pctOfSrc}%</div><div style="font-size:10px;color:#6a7fa8;text-transform:uppercase;letter-spacing:.5px">of start</div></div>
+        </div>`;
+      tip.classList.add('on');
+      moveTipSankey(e);
+    });
+    rect.addEventListener('mousemove',moveTipSankey);
+    rect.addEventListener('mouseleave',hideTip);
+    root.appendChild(rect);
+
+    // Label
+    const shortName = n.name.length>22 ? n.name.slice(0,22)+'…' : n.name;
+    const lbl = document.createElementNS(NS,'text');
+    lbl.setAttribute('x',lx); lbl.setAttribute('y',midY-7);
+    lbl.setAttribute('text-anchor',anchor);
+    lbl.setAttribute('fill','#1a2540'); lbl.setAttribute('font-size','12.5');
+    lbl.setAttribute('font-weight','700'); lbl.setAttribute('font-family','Barlow Condensed,sans-serif');
+    lbl.style.pointerEvents='none';
+    lbl.textContent = shortName;
+    root.appendChild(lbl);
+
+    const sub = document.createElementNS(NS,'text');
+    sub.setAttribute('x',lx); sub.setAttribute('y',midY+8);
+    sub.setAttribute('text-anchor',anchor);
+    sub.setAttribute('fill','#888'); sub.setAttribute('font-size','11');
+    sub.setAttribute('font-family','Barlow,sans-serif');
+    sub.style.pointerEvents='none';
+    sub.textContent = (dispVal>=1000?((dispVal/1000).toFixed(1)+'K'):dispVal)+' sessions';
+    root.appendChild(sub);
+
+    // Column header on first node of each col
+    if(n === nodes.filter(x=>x.col===n.col).sort((a,b)=>a.y0-b.y0)[0]) {
+      const hdr = document.createElementNS(NS,'text');
+      const hx = n.x0 + NODE_W/2;
+      hdr.setAttribute('x', isRight ? lx : n.col===0 ? lx : n.x0+NODE_W/2);
+      hdr.setAttribute('y', -12);
+      hdr.setAttribute('text-anchor', n.col===0 ? 'end' : isRight ? 'start' : 'middle');
+      hdr.setAttribute('fill','#6b7a9e'); hdr.setAttribute('font-size','10');
+      hdr.setAttribute('font-weight','700'); hdr.setAttribute('letter-spacing','1.5');
+      hdr.setAttribute('font-family','Barlow,sans-serif');
+      hdr.style.pointerEvents='none';
+      const labels = ['STEP 1 — ENTRY', 'STEP 2 — NEXT PAGE', 'STEP 3'];
+      hdr.textContent = labels[n.col] || '';
+      root.appendChild(hdr);
+    }
+  });
+
+  // Return rate callout
+  const retLinks = links.filter(l => l.isBack && nodeMap[l.si]?.col===0);
+  if(retLinks.length) {
+    const retN = retLinks.reduce((a,l)=>a+l.value,0);
+    const retP = ((retN/d.source.n)*100).toFixed(1);
+    const cx = W/2;
+    const cy = H + 14;
+    const pw = 310;
+    const bg = document.createElementNS(NS,'rect');
+    bg.setAttribute('x',cx-pw/2); bg.setAttribute('y',cy-14);
+    bg.setAttribute('width',pw); bg.setAttribute('height',22); bg.setAttribute('rx','11');
+    bg.setAttribute('fill','#ffeaea'); bg.setAttribute('stroke','#c8102e');
+    bg.setAttribute('stroke-width','1'); bg.setAttribute('stroke-opacity','0.35');
+    root.appendChild(bg);
+    const ct = document.createElementNS(NS,'text');
+    ct.setAttribute('x',cx); ct.setAttribute('y',cy+1);
+    ct.setAttribute('text-anchor','middle');
+    ct.setAttribute('font-family','Barlow Condensed,sans-serif');
+    ct.setAttribute('font-weight','800'); ct.setAttribute('font-size','12');
+    ct.setAttribute('fill','#c8102e');
+    ct.textContent = '↺  Homepage return rate: '+retP+'%  ·  '+retN.toLocaleString()+' users loop back';
+    root.appendChild(ct);
+  }
+}
+
+function showTip(ev,f,tot){
+  const pct=((f.n/tot)*100).toFixed(1);
+  const lbl=f.type==='return'?'↺ Returns to homepage':f.type==='exit'?'⊘ Exit / other':'→ Forward progress';
+  document.getElementById('tip').innerHTML=`<strong>${f.name}</strong><span class="tp">${pct}%</span><span class="tm">${fmt(f.n)} sessions<br>${lbl}</span>`;
+  document.getElementById('tip').classList.add('on');
+  moveTip(ev);
+}
+function moveTip(ev){const t=document.getElementById('tip');t.style.left=(ev.clientX+16)+'px';t.style.top=(ev.clientY-10)+'px';}
+function hideTip(){document.getElementById('tip').classList.remove('on');}
+
+// ═══════════════════════════════════════════════════
+// SECTION NAV
+// ═══════════════════════════════════════════════════
+function showSection(id){
+  hideTip();
+  hoveredFlow = null;
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))n.classList.add('active');
+  });
+  window.scrollTo(0,0);
+  if(id==='paths'){setTimeout(()=>renderPath(),60);}
+  if(id==='certcards'){setTimeout(()=>renderFunnel('funnel-cc2','cc','total'),60);}
+}
+
+document.addEventListener('scroll', hideTip);
+document.addEventListener('click', e => { if(!e.target.closest('path')&&!e.target.closest('rect')) hideTip(); });
+
+// Initial renders
+renderPath();
+window.addEventListener('resize',()=>{
+  if(document.getElementById('paths').classList.contains('active')) drawSankey(PATH_DATA[curPath]);
+});
+
+</script>
+</body>
+</html>

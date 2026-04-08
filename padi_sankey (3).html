@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PADI Traffic Flow — Sankey</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #f4f6fb;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+  padding: 30px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; text-align:center; }
+.sub { font-size: 13px; color: #888; margin-bottom: 20px; text-align:center; }
+.legend {
+  display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+  margin-bottom: 20px;
+}
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #555; }
+.legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+#chart {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.09);
+  padding: 24px 10px;
+  overflow-x: auto;
+  width: 100%;
+  max-width: 1400px;
+}
+svg { display: block; }
+
+/* ── Tooltip ── */
+#tip {
+  position: fixed;
+  display: none;
+  background: rgba(13,13,32,0.97);
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 12.5px;
+  line-height: 1.0;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  min-width: 220px;
+  max-width: 310px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.tip-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+.tip-badge.fwd  { background: rgba(91,127,232,0.25); color: #a0b8ff; }
+.tip-badge.back { background: rgba(255,180,100,0.2); color: #ffcc88; }
+.tip-badge.node { background: rgba(100,220,180,0.2); color: #7de8c8; }
+
+.tip-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.tip-row:last-child { margin-bottom: 0; }
+.tip-lbl  { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #6a7fa8; }
+.tip-val  { font-size: 13px; font-weight: 700; color: #e8f0ff; }
+.tip-url  { font-size: 10.5px; color: #ffd580; font-family: monospace; word-break: break-all; margin-top: 1px; }
+
+.tip-divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 10px 0; }
+
+.tip-stats { display: flex; gap: 0; }
+.tip-stat  { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.tip-stat + .tip-stat { border-left: 1px solid rgba(255,255,255,0.08); padding-left: 16px; }
+.tip-stat .tip-big   { font-size: 20px; font-weight: 800; }
+.tip-stat .tip-big.sessions { color: #7de8c8; }
+.tip-stat .tip-big.pct      { color: #ff9f7e; }
+.tip-stat .tip-unit { font-size: 10px; color: #6a7fa8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<h1>PADI Website — Traffic Flow Sankey</h1>
+<p class="sub">How users navigate across key pages &nbsp;·&nbsp; Hover flows &amp; nodes to explore</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#5B7FE8"></div> Core Pages</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div> PADI Club</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#14B8A6"></div> Dive Shops / Explore</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#F59E0B"></div> Shop / Commerce</div>
+  <div class="legend-item">
+    <svg width="40" height="12"><line x1="0" y1="6" x2="40" y2="6" stroke="#999" stroke-width="2.5" stroke-dasharray="5,3" opacity="0.8"/></svg>
+    Return to Home
+  </div>
+  <div class="legend-item">
+    <svg width="40" height="12">
+      <line x1="0" y1="9" x2="40" y2="9" stroke="#5B7FE8" stroke-width="5" opacity="0.6"/>
+      <line x1="0" y1="3" x2="40" y2="3" stroke="#5B7FE8" stroke-width="2" opacity="0.4"/>
+    </svg>
+    Thicker = higher %
+  </div>
+</div>
+
+<div id="chart"><svg id="svg"></svg></div>
+
+<div id="tip">
+  <div id="tip-badge" class="tip-badge fwd"></div>
+
+  <div id="tip-from-wrap" class="tip-row">
+    <span class="tip-lbl">From</span>
+    <span id="tip-from-name" class="tip-val"></span>
+    <span id="tip-from-url"  class="tip-url"></span>
+  </div>
+
+  <div id="tip-to-wrap" class="tip-row">
+    <span class="tip-lbl" id="tip-to-lbl">To</span>
+    <span id="tip-to-name" class="tip-val"></span>
+    <span id="tip-to-url"  class="tip-url"></span>
+  </div>
+
+  <hr class="tip-divider" id="tip-hr"/>
+
+  <div class="tip-stats" id="tip-stats">
+    <div class="tip-stat">
+      <span id="tip-sessions" class="tip-big sessions"></span>
+      <span class="tip-unit">Sessions</span>
+    </div>
+    <div class="tip-stat" id="tip-pct-wrap">
+      <span id="tip-pct" class="tip-big pct"></span>
+      <span class="tip-unit" id="tip-pct-lbl">of source traffic</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── META ─────────────────────────────────────────────────────────────────────
+const META = {
+  "Home page":                    { label:"Home page",          url:"padi.com/",                             col:0, color:"#5B7FE8" },
+  "/driver/padiclub":             { label:"PADI Club",          url:"padi.com/driver/padiclub",              col:1, color:"#8B5CF6" },
+  "/dive-shops/nearby":           { label:"Dive Shops Nearby",  url:"padi.com/dive-shops/nearby/",           col:1, color:"#14B8A6" },
+  "/education/continue-learning": { label:"Continue Learning",  url:"padi.com/education/continue-learning",  col:1, color:"#5B7FE8" },
+  "/education/professional":      { label:"Professional",       url:"padi.com/education/professional",       col:1, color:"#5B7FE8" },
+  "/shop-online":                 { label:"Shop Online",        url:"padi.com/shop-online",                  col:1, color:"#F59E0B" },
+  "/search":                      { label:"Search",             url:"padi.com/search",                       col:1, color:"#5B7FE8" },
+  "/exploration":                 { label:"Exploration",        url:"padi.com/exploration/",                 col:1, color:"#14B8A6" },
+  "/education":                   { label:"Education",          url:"padi.com/education",                    col:1, color:"#5B7FE8" },
+  "/help":                        { label:"Help",               url:"padi.com/help",                         col:2, color:"#14B8A6" },
+  "/scuba-diving-mobile-apps":    { label:"Mobile Apps",        url:"padi.com/scuba-diving-mobile-apps",     col:2, color:"#14B8A6" },
+  "/dive-shops/mexico-cozumel":   { label:"Cozumel",            url:"padi.com/dive-shops/mexico/cozumel/",   col:2, color:"#14B8A6" },
+  "/dive-shops/phuket":           { label:"Phuket",             url:"padi.com/dive-shops/phuket",            col:2, color:"#14B8A6" },
+  "/education/speciality":        { label:"Speciality Courses", url:"padi.com/education/speciality-courses", col:2, color:"#5B7FE8" },
+  "/gift-guide":                  { label:"Gift Guide",         url:"padi.com/gift-guide-for-ocean-lovers",  col:2, color:"#F59E0B" },
+  "/certcard":                    { label:"Cert Card",          url:"padi.com/certcard",                     col:2, color:"#14B8A6" },
+  "/downloads":                   { label:"Downloads",          url:"padi.com/downloads",                    col:2, color:"#14B8A6" },
+  "/diving-in/caribbean":         { label:"Caribbean",          url:"padi.com/diving-in/caribbean/",         col:2, color:"#14B8A6" },
+  "/diving-in/asia":              { label:"Asia",               url:"padi.com/diving-in/asia/",              col:2, color:"#14B8A6" },
+  "/dive-sites/world":            { label:"Dive Sites World",   url:"padi.com/dive-sites/world/",            col:2, color:"#14B8A6" },
+  "/education/learn-to-dive":     { label:"Learn To Dive",      url:"padi.com/education/learn-to-dive",      col:2, color:"#5B7FE8" },
+};
+
+// ── RAW DATA [source, target, sessions, % of source] ─────────────────────────
+const RAW = [
+  ["Home page","/driver/padiclub",119137,4.42],
+  ["Home page","/dive-shops/nearby",80690,2.99],
+  ["Home page","/education/continue-learning",58795,2.18],
+  ["Home page","/education/professional",54647,2.03],
+  ["Home page","/shop-online",48605,1.80],
+  ["Home page","/search",41707,1.55],
+  ["Home page","/exploration",34105,1.26],
+  ["Home page","/education",28947,1.07],
+  ["/driver/padiclub","Home page",58471,49.08],
+  ["/dive-shops/nearby","Home page",14349,17.80],
+  ["/education/continue-learning","Home page",27725,50.58],
+  ["/education/professional","Home page",29167,53.45],
+  ["/shop-online","Home page",22852,47.02],
+  ["/search","Home page",15979,38.34],
+  ["/exploration","Home page",6390,18.76],
+  ["/education","Home page",14222,49.15],
+  ["/driver/padiclub","/dive-shops/nearby",2786,2.34],
+  ["/driver/padiclub","/education/professional",2772,2.33],
+  ["/driver/padiclub","/help",2048,1.72],
+  ["/driver/padiclub","/shop-online",1795,1.51],
+  ["/driver/padiclub","/scuba-diving-mobile-apps",1203,1.01],
+  ["/driver/padiclub","/exploration",1090,0.92],
+  ["/dive-shops/nearby","/driver/padiclub",700,0.87],
+  ["/dive-shops/nearby","/dive-shops/mexico-cozumel",437,0.54],
+  ["/dive-shops/nearby","/dive-shops/phuket",437,0.54],
+  ["/education/continue-learning","/dive-shops/nearby",22084,47.17],
+  ["/education/continue-learning","/education",1123,3.76],
+  ["/education/continue-learning","/education/speciality",949,1.91],
+  ["/education/continue-learning","/education/professional",855,1.61],
+  ["/education/professional","/driver/padiclub",1757,3.22],
+  ["/education/professional","/shop-online",1189,2.18],
+  ["/education/professional","/dive-shops/nearby",808,1.48],
+  ["/education/professional","/search",620,1.14],
+  ["/shop-online","/dive-shops/nearby",2462,5.07],
+  ["/shop-online","/gift-guide",2269,4.67],
+  ["/shop-online","/search",1405,2.89],
+  ["/shop-online","/driver/padiclub",1156,2.38],
+  ["/search","/dive-shops/nearby",2481,5.95],
+  ["/search","/certcard",1809,4.34],
+  ["/search","/downloads",1348,3.23],
+  ["/search","/exploration",1109,2.66],
+  ["/exploration","/diving-in/caribbean",1043,3.06],
+  ["/exploration","/dive-shops/nearby",846,2.48],
+  ["/exploration","/diving-in/asia",564,1.66],
+  ["/exploration","/dive-sites/world",489,1.44],
+  ["/education","/education/continue-learning",1734,5.99],
+  ["/education","/dive-shops/nearby",756,2.61],
+  ["/education","/driver/padiclub",677,2.34],
+  ["/education","/education/learn-to-dive",672,2.32],
+];
+
+const fmt = v => v >= 1000 ? (v/1000).toFixed(1)+"K" : String(v);
+
+// Scale % → stroke width: 0.5% → 2px, 50% → 36px
+function pctToWidth(pct) {
+  const minW = 2, maxW = 36, minP = 0.5, maxP = 50;
+  const clamped = Math.min(Math.max(pct, minP), maxP);
+  return minW + ((clamped - minP) / (maxP - minP)) * (maxW - minW);
+}
+
+function render() {
+  const svgEl    = document.getElementById("svg");
+  const chartDiv = document.getElementById("chart");
+  const TW = Math.max(1100, chartDiv.clientWidth - 20);
+  const TH = 880;
+  const ML=160, MR=220, MT=30, MB=20;
+  const W = TW-ML-MR, H = TH-MT-MB;
+  const NODE_W=16, PAD=10;
+  const NS = "http://www.w3.org/2000/svg";
+
+  svgEl.setAttribute("width",TW);
+  svgEl.setAttribute("height",TH);
+  svgEl.innerHTML="";
+
+  const names = Object.keys(META);
+  const ix = Object.fromEntries(names.map((n,i)=>[n,i]));
+
+  const nodes = names.map((name,i)=>({
+    name,id:i,
+    col: META[name].col,
+    inVal:0,outVal:0,
+    x0:0,x1:0,y0:0,y1:0,
+    sLinks:[],tLinks:[]
+  }));
+
+  const links = RAW.map(([s,t,v,pct])=>({
+    si:ix[s], ti:ix[t], value:v, pct,
+    strokeW: pctToWidth(pct),
+    y0:0, y1:0,
+    isBack: t==="Home page"
+  }));
+
+  links.forEach(l=>{
+    nodes[l.si].outVal+=l.value;
+    nodes[l.ti].inVal +=l.value;
+    nodes[l.si].sLinks.push(l);
+    nodes[l.ti].tLinks.push(l);
+  });
+
+  const maxCol=2;
+  nodes.forEach(n=>{ n.x0=n.col*(W/maxCol); n.x1=n.x0+NODE_W; });
+
+  // Y layout
+  for(let c=0;c<=maxCol;c++){
+    const col=nodes.filter(n=>n.col===c).sort((a,b)=>(b.inVal+b.outVal)-(a.inVal+a.outVal));
+    if(!col.length) continue;
+    const total=col.reduce((s,n)=>s+Math.max(n.inVal,n.outVal,1),0);
+    const avail=H-PAD*(col.length-1);
+    let y=0;
+    col.forEach(n=>{
+      const h=Math.max(8,(Math.max(n.inVal,n.outVal,1)/total)*avail);
+      n.y0=y; n.y1=y+h; y+=h+PAD;
+    });
+  }
+
+  // Link y stagger — use strokeW for spacing
+  for(let c=0;c<=maxCol;c++){
+    nodes.filter(n=>n.col===c).forEach(n=>{
+      const fwd=n.sLinks.filter(l=>!l.isBack).sort((a,b)=>nodes[a.ti].y0-nodes[b.ti].y0);
+      const bck=n.sLinks.filter(l=>l.isBack);
+      let y=n.y0;
+      [...fwd,...bck].forEach(l=>{l.y0=y+l.strokeW/2; y+=l.strokeW;});
+    });
+  }
+  for(let c=0;c<=maxCol;c++){
+    nodes.filter(n=>n.col===c).forEach(n=>{
+      const fwd=n.tLinks.filter(l=>!l.isBack).sort((a,b)=>nodes[a.si].y0-nodes[b.si].y0);
+      const bck=n.tLinks.filter(l=>l.isBack);
+      let y=n.y0;
+      [...fwd,...bck].forEach(l=>{l.y1=y+l.strokeW/2; y+=l.strokeW;});
+    });
+  }
+
+  // Defs
+  const defs=document.createElementNS(NS,"defs");
+  links.forEach((l,i)=>{
+    const sc=META[nodes[l.si].name]?.color||"#aaa";
+    const tc=META[nodes[l.ti].name]?.color||"#aaa";
+    const gr=document.createElementNS(NS,"linearGradient");
+    gr.setAttribute("id","g"+i);
+    gr.setAttribute("gradientUnits","userSpaceOnUse");
+    gr.setAttribute("x1",nodes[l.si].x1+ML);
+    gr.setAttribute("x2",nodes[l.ti].x0+ML);
+    [[sc,"0%","0.65"],[tc,"100%","0.4"]].forEach(([col,off,op])=>{
+      const s=document.createElementNS(NS,"stop");
+      s.setAttribute("offset",off);s.setAttribute("stop-color",col);s.setAttribute("stop-opacity",op);
+      gr.appendChild(s);
+    });
+    defs.appendChild(gr);
+  });
+  svgEl.appendChild(defs);
+
+  const root=document.createElementNS(NS,"g");
+  root.setAttribute("transform",`translate(${ML},${MT})`);
+  svgEl.appendChild(root);
+
+  // Tooltip refs
+  const tip       = document.getElementById("tip");
+  const tipBadge  = document.getElementById("tip-badge");
+  const tipFromN  = document.getElementById("tip-from-name");
+  const tipFromU  = document.getElementById("tip-from-url");
+  const tipToWrap = document.getElementById("tip-to-wrap");
+  const tipToN    = document.getElementById("tip-to-name");
+  const tipToU    = document.getElementById("tip-to-url");
+  const tipSess   = document.getElementById("tip-sessions");
+  const tipPct    = document.getElementById("tip-pct");
+  const tipPctW   = document.getElementById("tip-pct-wrap");
+  const tipPctLbl = document.getElementById("tip-pct-lbl");
+  const tipHr     = document.getElementById("tip-hr");
+
+  function moveTip(e){
+    const tx = e.clientX+20, ty = e.clientY-14;
+    tip.style.left = Math.min(tx, window.innerWidth-330)+"px";
+    tip.style.top  = Math.max(ty, 8)+"px";
+  }
+
+  function showFlowTip(e,l){
+    tipBadge.className = "tip-badge "+(l.isBack?"back":"fwd");
+    tipBadge.textContent = l.isBack ? "↩ Return Flow" : "→ Forward Flow";
+    tipFromN.textContent = META[nodes[l.si].name]?.label||nodes[l.si].name;
+    tipFromU.textContent = META[nodes[l.si].name]?.url||"";
+    tipToWrap.style.display="flex";
+    tipToN.textContent = META[nodes[l.ti].name]?.label||nodes[l.ti].name;
+    tipToU.textContent = META[nodes[l.ti].name]?.url||"";
+    tipHr.style.display="block";
+    tipSess.textContent = l.value.toLocaleString();
+    tipPctW.style.display="flex";
+    tipPct.textContent  = l.pct+"%";
+    tipPctLbl.textContent="of source traffic";
+    tip.style.display="block";
+    moveTip(e);
+  }
+
+  function showNodeTip(e,n){
+    const meta=META[n.name];
+    tipBadge.className="tip-badge node";
+    tipBadge.textContent="📄 Page";
+    tipFromN.textContent=meta?.label||n.name;
+    tipFromU.textContent=meta?.url||"";
+    tipToWrap.style.display="none";
+    tipHr.style.display="block";
+    tipSess.textContent=fmt(Math.max(n.inVal,n.outVal));
+    tipPctW.style.display="flex";
+    const homeOut=nodes.find(nd=>nd.name==="Home page")?.outVal||1;
+    tipPct.textContent=((Math.max(n.inVal,n.outVal)/homeOut)*100).toFixed(1)+"%";
+    tipPctLbl.textContent="of home traffic";
+    tip.style.display="block";
+    moveTip(e);
+  }
+
+  // ── Draw links ──
+  const sorted=[...links].sort((a,b)=>(a.isBack?1:0)-(b.isBack?1:0));
+  sorted.forEach(l=>{
+    const i=links.indexOf(l);
+    const x0=nodes[l.si].x1, x1=nodes[l.ti].x0;
+    const y0=l.y0, y1=l.y1;
+    let d;
+    if(l.isBack){
+      const arcH=Math.max(70,Math.abs(y0-y1)*0.35+90);
+      d=`M${x0},${y0} C${x0},${y0-arcH} ${x1},${y1-arcH} ${x1},${y1}`;
+    } else {
+      const dx=(x1-x0)*0.5;
+      d=`M${x0},${y0} C${x0+dx},${y0} ${x1-dx},${y1} ${x1},${y1}`;
+    }
+
+    const p=document.createElementNS(NS,"path");
+    p.setAttribute("d",d);
+    p.setAttribute("stroke",`url(#g${i})`);
+    p.setAttribute("stroke-width",l.strokeW);
+    p.setAttribute("fill","none");
+    p.setAttribute("opacity",l.isBack?"0.4":"0.55");
+    if(l.isBack) p.setAttribute("stroke-dasharray","7,4");
+    p.style.cursor="pointer";
+    p.style.transition="opacity .12s, stroke-width .12s";
+
+    p.addEventListener("mouseenter",e=>{
+      p.setAttribute("opacity","0.95");
+      p.setAttribute("stroke-width",l.strokeW+3);
+      showFlowTip(e,l);
+    });
+    p.addEventListener("mousemove",moveTip);
+    p.addEventListener("mouseleave",()=>{
+      p.setAttribute("opacity",l.isBack?"0.4":"0.55");
+      p.setAttribute("stroke-width",l.strokeW);
+      tip.style.display="none";
+    });
+    root.appendChild(p);
+  });
+
+  // ── Draw nodes + labels ──
+  nodes.forEach(n=>{
+    const meta=META[n.name];
+    if(!meta) return;
+    const h=Math.max(8,n.y1-n.y0);
+    const midY=(n.y0+n.y1)/2;
+    const isRight=n.col===maxCol;
+    const lx=isRight?n.x1+10:n.x0-10;
+    const anchor=isRight?"start":"end";
+
+    const rect=document.createElementNS(NS,"rect");
+    rect.setAttribute("x",n.x0); rect.setAttribute("y",n.y0);
+    rect.setAttribute("width",NODE_W); rect.setAttribute("height",h);
+    rect.setAttribute("fill",meta.color); rect.setAttribute("rx","3");
+    rect.style.cursor="pointer";
+    rect.addEventListener("mouseenter",e=>showNodeTip(e,n));
+    rect.addEventListener("mousemove",moveTip);
+    rect.addEventListener("mouseleave",()=>{tip.style.display="none";});
+    root.appendChild(rect);
+
+    const lbl=document.createElementNS(NS,"text");
+    lbl.setAttribute("x",lx); lbl.setAttribute("y",midY-7);
+    lbl.setAttribute("text-anchor",anchor);
+    lbl.setAttribute("fill","#1a1a2e");
+    lbl.setAttribute("font-size","12.5");
+    lbl.setAttribute("font-weight","700");
+    lbl.setAttribute("font-family","Segoe UI,Arial,sans-serif");
+    lbl.style.pointerEvents="none";
+    lbl.textContent=meta.label;
+    root.appendChild(lbl);
+
+    const sub=document.createElementNS(NS,"text");
+    sub.setAttribute("x",lx); sub.setAttribute("y",midY+9);
+    sub.setAttribute("text-anchor",anchor);
+    sub.setAttribute("fill","#999");
+    sub.setAttribute("font-size","11");
+    sub.setAttribute("font-family","Segoe UI,Arial,sans-serif");
+    sub.style.pointerEvents="none";
+    sub.textContent=fmt(Math.max(n.inVal,n.outVal))+" sessions";
+    root.appendChild(sub);
+  });
+}
+
+render();
+window.addEventListener("resize",render);
+</script>
+</body>
+</html>

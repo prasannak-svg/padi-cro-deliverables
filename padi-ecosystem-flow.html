@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADI Ecosystem Flow & Metrics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f9fc; --border: #e2e8f0; --text: #111827; --muted: #6b7280;
+  --discovery: #1a6b3c; --hub: #b45309; --commerce: #1d4ed8;
+  --learning: #6d28d9;  --account: #0f766e; --pro: #9f1239;
+}
+body { background:var(--bg); font-family:'Plus Jakarta Sans',sans-serif; color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+
+/* TOPBAR */
+.topbar { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; height:52px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; z-index:100; }
+.logo { font-weight:800; font-size:17px; color:#0f172a; letter-spacing:-0.02em; }
+.logo span { color:#2563eb; }
+.badge { background:#f1f5f9; border:1px solid var(--border); border-radius:999px; padding:3px 10px; font-size:11px; font-weight:600; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+.btn { padding:6px 14px; border-radius:6px; border:1px solid var(--border); background:#fff; font-size:12px; font-weight:600; font-family:'Plus Jakarta Sans',sans-serif; cursor:pointer; color:var(--text); transition:all 0.15s; display:flex; align-items:center; gap:5px; }
+.btn:hover { background:#f8fafc; border-color:#cbd5e1; }
+
+/* TABS */
+.tabs { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; display:flex; flex-shrink:0; }
+.tab { padding:10px 20px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.15s; display:flex; align-items:center; gap:6px; user-select:none; }
+.tab:hover { color:var(--text); }
+.tab.active { color:#2563eb; border-bottom-color:#2563eb; }
+
+/* VIEWS */
+.view { display:none; flex:1; overflow:hidden; flex-direction:column; }
+.view.active { display:flex; }
+
+/* ══ METRICS ══ */
+.metrics-scroll { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:22px; }
+.section-head { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; }
+.section-title { font-size:14px; font-weight:700; color:#0f172a; }
+.section-sub { font-size:11px; color:var(--muted); }
+
+/* KPI */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+.kpi-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:16px 18px 14px; position:relative; overflow:hidden; }
+.kpi-accent { position:absolute; top:0; left:0; width:4px; height:100%; border-radius:12px 0 0 12px; }
+.kpi-label { font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:7px; }
+.kpi-value { font-size:28px; font-weight:800; color:#0f172a; font-family:'JetBrains Mono',monospace; line-height:1; margin-bottom:4px; }
+.kpi-sub { font-size:11px; color:var(--muted); line-height:1.4; }
+.kpi-chip { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; margin-top:6px; }
+
+/* 2-col grid */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:860px) { .two-col { grid-template-columns:1fr; } }
+.card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px; }
+
+/* Horizontal bar rows */
+.hbar-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid #f8fafc; }
+.hbar-row:last-child { border-bottom:none; }
+.hbar-label { font-size:12px; font-weight:700; width:120px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.hbar-outer { flex:1; height:7px; background:#f1f5f9; border-radius:4px; overflow:hidden; }
+.hbar-inner { height:100%; border-radius:4px; }
+.hbar-pct { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; width:40px; text-align:right; flex-shrink:0; }
+.hbar-abs { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); width:50px; text-align:right; flex-shrink:0; }
+
+/* Top flows */
+.tflow { display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:1px solid #f8fafc; }
+.tflow:last-child { border-bottom:none; }
+.tflow-rank { font-family:'JetBrains Mono',monospace; font-size:10px; color:#94a3b8; font-weight:700; width:20px; flex-shrink:0; }
+.tflow-path { flex:1; font-size:11px; min-width:0; }
+.tflow-src { font-weight:700; }
+.tflow-dst { color:var(--muted); font-weight:600; }
+.tflow-bar-wrap { width:56px; height:5px; background:#f1f5f9; border-radius:3px; flex-shrink:0; }
+.tflow-bar-fill { height:100%; border-radius:3px; }
+.tflow-val { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#374151; white-space:nowrap; }
+
+/* Platform table */
+.ptable { width:100%; border-collapse:collapse; }
+.ptable th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--muted); padding:0 8px 8px 0; text-align:left; border-bottom:1px solid var(--border); }
+.ptable th.r { text-align:right; }
+.ptable td { padding:7px 8px 7px 0; border-bottom:1px solid #f8fafc; font-size:12px; vertical-align:middle; }
+.ptable tr:last-child td { border-bottom:none; }
+.ptable td.r { text-align:right; }
+.pdot { width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:6px; }
+.pname { font-weight:700; color:#1e293b; }
+.mono { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+.chip { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+.pbar-wrap { width:70px; height:5px; background:#f1f5f9; border-radius:3px; display:inline-block; vertical-align:middle; margin-right:6px; }
+.pbar-fill { height:100%; border-radius:3px; }
+
+/* Insights */
+.ins-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:12px; }
+.ins-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px 16px; border-left:4px solid; }
+.ins-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:5px; }
+.ins-val { font-size:20px; font-weight:800; color:#0f172a; margin-bottom:3px; }
+.ins-desc { font-size:11px; color:var(--muted); line-height:1.5; }
+
+/* ══ FLOW ══ */
+#canvas { flex:1; overflow:hidden; cursor:grab; position:relative; }
+#canvas:active { cursor:grabbing; }
+#svg-root { width:100%; height:100%; display:block; }
+.node-card { border-radius:12px; border:2px solid var(--border); box-shadow:0 2px 8px rgba(0,0,0,0.06); padding:11px 13px; cursor:pointer; transition:box-shadow 0.2s,transform 0.2s; user-select:none; overflow:hidden; position:relative; }
+.node-card:hover { box-shadow:0 8px 24px rgba(0,0,0,0.12); transform:translateY(-1px); }
+.node-card.active { box-shadow:0 0 0 3px rgba(37,99,235,0.25),0 8px 24px rgba(0,0,0,0.12); }
+.node-tag { display:inline-block; font-size:9px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-bottom:5px; }
+.node-title { font-size:12px; font-weight:700; color:#0f172a; margin-bottom:3px; line-height:1.2; }
+.node-vol { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:500; margin-top:4px; }
+.node-bar { height:3px; border-radius:2px; margin-top:5px; opacity:0.5; }
+
+#panel { position:fixed; top:108px; right:20px; width:290px; background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 8px 32px rgba(0,0,0,0.12); z-index:300; overflow:hidden; display:none; flex-direction:column; max-height:calc(100vh-120px); }
+#panel.vis { display:flex; }
+.ph { padding:13px 15px 10px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0; }
+.ph-title { font-size:13px; font-weight:700; }
+.ph-sub { font-size:10px; color:var(--muted); margin-top:2px; font-family:'JetBrains Mono',monospace; }
+.ph-close { cursor:pointer; color:var(--muted); font-size:17px; line-height:1; }
+.ph-close:hover { color:#0f172a; }
+.pb { overflow-y:auto; flex:1; padding:10px 0; }
+.ps { padding:0 14px 8px; }
+.ps-title { font-size:9px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+.fr { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid #f8fafc; }
+.fr:last-child { border-bottom:none; }
+.fr-dest { font-size:11px; font-weight:600; color:#1e293b; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fr-val { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-align:right; white-space:nowrap; }
+.fr-bw { width:48px; height:4px; background:#f1f5f9; border-radius:2px; flex-shrink:0; }
+.fr-bf { height:100%; border-radius:2px; }
+.feat { font-size:11px; color:#374151; padding:3px 0; display:flex; gap:5px; }
+.feat::before { content:'›'; color:#2563eb; font-weight:700; flex-shrink:0; }
+
+.flow-legend { background:#fff; border-bottom:1px solid var(--border); padding:0 20px; height:36px; display:flex; align-items:center; gap:14px; flex-shrink:0; overflow-x:auto; }
+.fl-item { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600; color:var(--muted); white-space:nowrap; }
+.fl-dot { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+
+.zoom-ctrl { position:fixed; bottom:20px; left:20px; display:flex; flex-direction:column; gap:4px; z-index:200; }
+.zbtn { width:30px; height:30px; background:#fff; border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px; color:#374151; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+.zbtn:hover { background:#f8fafc; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="logo">PADI <span>Ecosystem</span></div>
+    <span class="badge">9 platforms · 9.8M+ users</span>
+  </div>
+  <button class="btn" onclick="resetView()">⌖ Reset Flow View</button>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-metrics" onclick="switchTab('metrics')">📊 Metrics &amp; Data</div>
+  <div class="tab" id="tab-flow" onclick="switchTab('flow')">🔀 Ecosystem Flow</div>
+</div>
+
+<!-- ═══ METRICS ═══ -->
+<div class="view active" id="view-metrics">
+<div class="metrics-scroll">
+
+  <div>
+    <div class="section-head">
+      <div class="section-title">Platform Traffic Overview</div>
+      <div class="section-sub">Users across the full PADI digital ecosystem</div>
+    </div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="section-head"><div class="section-title">Discovery Source Share</div><div class="section-sub">303K total routed</div></div>
+      <div id="disc-bars"></div>
+    </div>
+    <div class="card">
+      <div class="section-head"><div class="section-title">Top 10 Traffic Flows</div><div class="section-sub">Largest source → destination pairs</div></div>
+      <div id="top-flows"></div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="section-head"><div class="section-title">Platform Volume &amp; Inbound Traffic</div></div>
+      <table class="ptable" id="ptable"></table>
+    </div>
+    <div class="card">
+      <div class="section-head"><div class="section-title">Padi.com Outbound Distribution</div><div class="section-sub">Where the hub sends users</div></div>
+      <div id="hub-dist"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-head"><div class="section-title">Key CRO Insights</div></div>
+    <div class="ins-grid" id="ins-grid"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ═══ FLOW ═══ -->
+<div class="view" id="view-flow">
+  <div class="flow-legend">
+    <div class="fl-item"><div class="fl-dot" style="background:#1a6b3c"></div>Discovery</div>
+    <div class="fl-item"><div class="fl-dot" style="background:#b45309"></div>Hub</div>
+    <div class="fl-item"><div class="fl-dot" style="background:#1d4ed8"></div>Commerce</div>
+    <div class="fl-item"><div class="fl-dot" style="background:#6d28d9"></div>Learning</div>
+    <div class="fl-item"><div class="fl-dot" style="background:#0f766e"></div>Account</div>
+    <div class="fl-item"><div class="fl-dot" style="background:#9f1239"></div>Professional</div>
+    <div class="fl-item" style="margin-left:auto;font-size:11px;color:#94a3b8;">Click nodes · Drag to pan · Scroll to zoom</div>
+  </div>
+  <div id="canvas">
+    <svg id="svg-root">
+      <defs>
+        <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#94a3b8" opacity="0.55"/></marker>
+        <marker id="arr-b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#2563eb" opacity="0.8"/></marker>
+      </defs>
+      <g id="g-links"></g>
+      <g id="g-nodes"></g>
+    </svg>
+  </div>
+  <div class="zoom-ctrl">
+    <div class="zbtn" onclick="zoomIn()">+</div>
+    <div class="zbtn" onclick="zoomOut()">−</div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="ph">
+    <div><div class="ph-title" id="pt"></div><div class="ph-sub" id="ps"></div></div>
+    <div class="ph-close" onclick="closePanel()">×</div>
+  </div>
+  <div class="pb" id="pb"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// SHARED DATA
+// ══════════════════════════════════════
+const TS = {
+  discovery:{ tag:'Discovery',    color:'#1a6b3c', bg:'#e8f5ee', border:'#a7f3d0' },
+  hub:      { tag:'Hub',          color:'#b45309', bg:'#fef3c7', border:'#fcd34d' },
+  commerce: { tag:'Commerce',     color:'#1d4ed8', bg:'#dbeafe', border:'#93c5fd' },
+  learning: { tag:'Learning',     color:'#6d28d9', bg:'#ede9fe', border:'#c4b5fd' },
+  account:  { tag:'Account',      color:'#0f766e', bg:'#ccfbf1', border:'#5eead4' },
+  pro:      { tag:'Professional', color:'#9f1239', bg:'#ffe4e6', border:'#fca5a5' },
+};
+
+const NODES = [
+  {id:'scubadiving',label:'Scubadiving.com',   short:'Scubadiving', type:'discovery',vol:16224,   col:0,row:0,
+   feat:['Sends users via Footer navigation','High commercial purchase intent','Consumer scuba diving audience'],
+   out:[{to:'padi',u:11482},{to:'store',u:6746},{to:'travel',u:1280},{to:'account',u:1167},{to:'learning',u:489}]},
+  {id:'blog',       label:'Blog.padi.com',      short:'Blog',        type:'discovery',vol:248854,  col:0,row:1,
+   feat:['Primary content & awareness engine','Drives international traffic (CN, KR, JP, TW)','Mixed consumer + professional audience'],
+   out:[{to:'padi',u:81069},{to:'travel',u:53528},{to:'store',u:46026},{to:'prosblog',u:34194},{to:'pro',u:21680},{to:'account',u:2673},{to:'learning',u:753}]},
+  {id:'prosblog',   label:'Pros-blog.padi.com', short:'Pros-blog',   type:'discovery',vol:38220,   col:0,row:2,
+   feat:['Professional/instructor focused content','55.8% goes directly to pro.padi.com','Career management & credential signals'],
+   out:[{to:'pro',u:21332},{to:'padi',u:9545},{to:'divejobs',u:1954},{to:'account',u:1708},{to:'store',u:1622},{to:'travel',u:634},{to:'learning',u:129}]},
+  {id:'padi',       label:'www.padi.com',        short:'PADI.com',    type:'hub',      vol:9600000, col:1,row:1,
+   feat:['Central PADI homepage & navigation hub','Routes to all downstream platforms','Account login, course finder, dive site search'],
+   out:[{to:'account',u:2407282},{to:'learning',u:2019222},{to:'store',u:1976736},{to:'travel',u:1075588},{to:'pro',u:478575},{to:'divejobs',u:98479},{to:'prosblog',u:52091},{to:'blog',u:164612}]},
+  {id:'store',      label:'Store.padi.com',      short:'Store',       type:'commerce', vol:1976736, col:2,row:0,
+   feat:['All scuba courses (e-learning, in-person)','Introductory, certification, specialty, refresher','PADI Club landing & detail pages'],
+   out:[{to:'account',u:497020},{to:'learning',u:376695},{to:'padi',u:344076},{to:'travel',u:50974},{to:'pro',u:1482}]},
+  {id:'travel',     label:'Travel.padi.com',     short:'Travel',      type:'commerce', vol:1075588, col:2,row:2,
+   feat:['Search liveboards, resorts, dive centers','Course & snorkeling destination search','Individual product pages with dates & pricing'],
+   out:[{to:'padi',u:58538},{to:'account',u:34957},{to:'store',u:22947},{to:'learning',u:2712}]},
+  {id:'learning',   label:'Learning.padi.com',   short:'Learning',    type:'learning', vol:2019222, col:3,row:0,
+   feat:['Dashboard with enrolled courses & certs','Driver tool — log training & recreational dives','Store feature & PADI Club link → store.padi.com','Book dive trip → travel.padi.com'],
+   out:[{to:'account',u:950369},{to:'store',u:419825},{to:'padi',u:389586},{to:'travel',u:20567}]},
+  {id:'account',    label:'Account.padi.com',    short:'Account',     type:'account',  vol:2407282, col:3,row:2,
+   feat:['Central authentication for PADI ecosystem','Login gateway before accessing any platform','Profile, certifications, membership management'],
+   out:[{to:'learning',u:1622160},{to:'pro',u:427697},{to:'store',u:399365},{to:'padi',u:111764},{to:'travel',u:34777},{to:'divejobs',u:12695}]},
+  {id:'pro',        label:'Pro.padi.com',         short:'Pro',         type:'pro',      vol:478575,  col:4,row:1,
+   feat:['Instructor & divemaster resources','Professional certification management','Career development tools'],out:[]},
+  {id:'divejobs',   label:'DiveJobs.padi.com',    short:'DiveJobs',    type:'pro',      vol:98479,   col:4,row:3,
+   feat:['Dive industry job listings','Career opportunities for professionals'],out:[]},
+];
+const NM = {}; NODES.forEach(n=>NM[n.id]=n);
+
+const LINKS = [];
+NODES.forEach(s=>(s.out||[]).forEach(f=>{ if(NM[f.to]) LINKS.push({src:s.id,tgt:f.to,u:f.u}); }));
+
+function fmt(n){
+  if(n>=1e6) return (n/1e6).toFixed(1)+'M';
+  if(n>=1000) return (n/1000).toFixed(n>=1e5?0:1)+'K';
+  return n.toLocaleString();
+}
+
+// ══════════════════════════════════════
+// TAB
+// ══════════════════════════════════════
+function switchTab(t){
+  ['metrics','flow'].forEach(x=>{
+    document.getElementById('tab-'+x).classList.toggle('active',x===t);
+    document.getElementById('view-'+x).classList.toggle('active',x===t);
+  });
+  if(t==='flow') setTimeout(initFlow,50);
+}
+
+// ══════════════════════════════════════
+// METRICS
+// ══════════════════════════════════════
+(function buildMetrics(){
+
+  // KPI
+  const kpis=[
+    {lbl:'Total Ecosystem Users',   val:'9.8M+',   sub:'Across all PADI platforms',             col:'#b45309', chip:{txt:'Hub: padi.com',cl:'#fef3c7',tc:'#b45309'}},
+    {lbl:'Discovery Routed Users',  val:'303,298', sub:'Via 3 discovery sources',               col:'#1a6b3c', chip:{txt:'82% from Blog.padi.com',cl:'#e8f5ee',tc:'#1a6b3c'}},
+    {lbl:'Account.padi.com',        val:'2.4M',    sub:'Auth gateway — #1 padi.com destination',col:'#0f766e', chip:{txt:'↑ Bottleneck watch',cl:'#ccfbf1',tc:'#0f766e'}},
+    {lbl:'Learning.padi.com',       val:'2.0M',    sub:'Active learners on platform',           col:'#6d28d9', chip:{txt:'⚠ Low discovery reach',cl:'#ede9fe',tc:'#6d28d9'}},
+    {lbl:'Store.padi.com',          val:'1.98M',   sub:'Commerce platform users',               col:'#1d4ed8', chip:{txt:'↑ 41.6% referral rate from Scubadiving',cl:'#dbeafe',tc:'#1d4ed8'}},
+    {lbl:'Travel.padi.com',         val:'1.08M',   sub:'Trip-planning users',                   col:'#1d4ed8', chip:{txt:'Blog drives 53K direct',cl:'#dbeafe',tc:'#1d4ed8'}},
+    {lbl:'Pro.padi.com',            val:'478K',    sub:'Professional instructor users',         col:'#9f1239', chip:{txt:'55.8% from Pros-blog',cl:'#ffe4e6',tc:'#9f1239'}},
+    {lbl:'DiveJobs.padi.com',       val:'98K',     sub:'Job listings platform',                 col:'#9f1239', chip:{txt:'Pro career funnel',cl:'#ffe4e6',tc:'#9f1239'}},
+  ];
+  const g=document.getElementById('kpi-grid');
+  kpis.forEach(k=>{
+    const d=document.createElement('div'); d.className='kpi-card';
+    d.innerHTML=`<div class="kpi-accent" style="background:${k.col}"></div>
+      <div class="kpi-label">${k.lbl}</div>
+      <div class="kpi-value">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      <div class="kpi-chip" style="background:${k.chip.cl};color:${k.chip.tc}">${k.chip.txt}</div>`;
+    g.appendChild(d);
+  });
+
+  // Discovery bars
+  const disc=[
+    {lbl:'Blog.padi.com',     u:248854, c:'#2979ff'},
+    {lbl:'Pros-blog.padi.com',u:38220,  c:'#00bfa5'},
+    {lbl:'Scubadiving.com',   u:16224,  c:'#1a6b3c'},
+  ];
+  const dt=disc.reduce((a,d)=>a+d.u,0);
+  const de=document.getElementById('disc-bars');
+  disc.forEach(d=>{
+    const p=((d.u/dt)*100).toFixed(1);
+    de.innerHTML+=`<div class="hbar-row">
+      <div class="hbar-label" style="color:${d.c}">${d.lbl}</div>
+      <div class="hbar-outer"><div class="hbar-inner" style="width:${p}%;background:${d.c}"></div></div>
+      <div class="hbar-pct" style="color:${d.c}">${p}%</div>
+      <div class="hbar-abs">${fmt(d.u)}</div>
+    </div>`;
+  });
+
+  // Top 10 flows
+  const FLOW_NOTES = {
+    'account→learning':  'After logging in, users proceed directly to their enrolled courses.',
+    'padi→account':      'The largest single exit from the homepage — users going to log in.',
+    'padi→learning':     'padi.com is the primary entry point routing users into the learning platform.',
+    'padi→store':        'Course and product discovery on the homepage drives users to purchase.',
+    'learning→account':  'Users returning to account — likely re-authenticating or managing profile.',
+    'padi→travel':       'Homepage drives over 1M users into trip-planning and dive destination search.',
+    'account→pro':       'After login, a significant portion of users are professionals accessing pro tools.',
+    'learning→store':    'Learners browsing additional courses or upgrading their certification.',
+    'account→store':     'Post-login users heading to purchase a course or membership.',
+    'learning→padi':     'Users navigating back to the main hub from the learning platform.',
+    'blog→padi':         'Blog content drives the largest single discovery flow into the main hub.',
+    'store→account':     'Users authenticating before completing a course purchase.',
+    'store→learning':    'After purchase, users are redirected to start their course on learning.',
+    'blog→travel':       'Blog content is the top discovery driver for trip-planning on travel.padi.com.',
+    'blog→store':        'Blog drives significant course purchase intent directly to the store.',
+    'store→padi':        'Post-purchase users navigating back to the main hub.',
+    'blog→prosblog':     'Blog routes a large professional audience segment to the pros-specific blog.',
+    'blog→pro':          'Blog content surfaces professional resources for instructor-level readers.',
+    'prosblog→pro':      'Pros-blog sends the majority of its audience directly to professional tools.',
+    'travel→padi':       'Post-trip-browsing users returning to the main hub.',
+    'scubadiving→store': 'Scubadiving.com drives the highest-proportion store traffic of any discovery source.',
+  };
+
+  const allF=[];
+  NODES.forEach(s=>(s.out||[]).forEach(f=>{
+    if(NM[f.to]) allF.push({src:s,dst:NM[f.to],u:f.u});
+  }));
+  allF.sort((a,b)=>b.u-a.u);
+  const mxF=allF[0].u;
+  const tfe=document.getElementById('top-flows');
+  allF.slice(0,10).forEach((f,i)=>{
+    const sc=TS[f.src.type].color, dc=TS[f.dst.type].color;
+    const noteKey=`${f.src.id}→${f.dst.id}`;
+    const note=FLOW_NOTES[noteKey]||'';
+    tfe.innerHTML+=`<div class="tflow">
+      <div class="tflow-rank">#${i+1}</div>
+      <div class="tflow-path">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
+          <span class="tflow-src" style="color:${sc}">${f.src.short}</span>
+          <span style="color:#94a3b8"> → </span>
+          <span class="tflow-dst" style="color:${dc}">${f.dst.short}</span>
+        </div>
+        ${note?`<div style="font-size:10px;color:#6b7280;line-height:1.4;">${note}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;">
+        <div class="tflow-bar-wrap"><div class="tflow-bar-fill" style="width:${(f.u/mxF)*100}%;background:${dc}"></div></div>
+        <div class="tflow-val">${fmt(f.u)}</div>
+      </div>
+    </div>`;
+  });
+
+  // Platform table
+  const inb={};
+  LINKS.forEach(l=>{ inb[l.tgt]=(inb[l.tgt]||0)+l.u; });
+  const rows=NODES.filter(n=>!['scubadiving','blog','prosblog'].includes(n.id))
+    .sort((a,b)=>b.vol-a.vol);
+  const mx=rows[0].vol;
+  const tv=rows.reduce((a,r)=>a+r.vol,0);
+  const tbl=document.getElementById('ptable');
+  tbl.innerHTML=`<thead><tr><th>Platform</th><th>Volume</th><th class="r">Inbound</th><th class="r">Share</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    const s=TS[r.type], bw=Math.round((r.vol/mx)*100), pct=((r.vol/tv)*100).toFixed(1);
+    tbl.innerHTML+=`<tr>
+      <td><span class="pdot" style="background:${s.color}"></span><span class="pname">${r.short||r.label}</span></td>
+      <td><span class="pbar-wrap"><span class="pbar-fill" style="width:${bw}%;background:${s.color}40;border:1px solid ${s.color}50"></span></span><span class="mono">${fmt(r.vol)}</span></td>
+      <td class="r"><span class="mono">${fmt(inb[r.id]||0)}</span></td>
+      <td class="r"><span class="chip" style="background:${s.color}15;color:${s.color}">${pct}%</span></td>
+    </tr>`;
+  });
+  tbl.innerHTML+='</tbody>';
+
+  // Hub outbound
+  const hub=NM['padi'];
+  const ht=hub.out.reduce((a,f)=>a+f.u,0);
+  const he=document.getElementById('hub-dist');
+  [...hub.out].sort((a,b)=>b.u-a.u).forEach(f=>{
+    const tgt=NM[f.to]; if(!tgt) return;
+    const s=TS[tgt.type], p=((f.u/ht)*100).toFixed(1);
+    he.innerHTML+=`<div class="hbar-row">
+      <div class="hbar-label" style="color:${s.color};font-size:11px">${tgt.short||tgt.label}</div>
+      <div class="hbar-outer"><div class="hbar-inner" style="width:${p}%;background:${s.color}"></div></div>
+      <div class="hbar-pct" style="color:${s.color}">${p}%</div>
+      <div class="hbar-abs">${fmt(f.u)}</div>
+    </div>`;
+  });
+
+  // Insights
+  const ins=[
+    {ico:'🛒',lbl:'Highest Store Referral Rate',val:'41.6%',desc:'41.6% of users from Scubadiving.com navigated to store.padi.com — the highest referral rate to the store across all 3 discovery sources.',c:'#1d4ed8'},
+    {ico:'⚠️',lbl:'Universal Learning Gap',   val:'< 3%', desc:'All 3 discovery sources send under 3% of their users to learning.padi.com.',c:'#d97706'},
+    {ico:'🔐',lbl:'Account is Top Destination',val:'2.4M', desc:'account.padi.com receives the most users from padi.com at 2,407,282 — making it the #1 destination from the main hub.',c:'#0f766e'},
+    {ico:'♻️',lbl:'Account → Learning Loop',  val:'1.62M',desc:'1,622,160 users navigated from account.padi.com to learning.padi.com — the single largest flow in the entire ecosystem.',c:'#6d28d9'},
+    {ico:'✈️',lbl:'Travel is Cross-Source',   val:'54K+', desc:'Blog.padi.com (53,528) and Pros-blog.padi.com (634) together referred 54,162 users to travel.padi.com.',c:'#0ea5e9'},
+    {ico:'🌏',lbl:'Blog = Only Intl Referrer', val:'Only source', desc:'Only Blog.padi.com referred users to regional PADI domains (.cn, .co.kr, .co.jp, .com.tw). The other two sources did not.',c:'#9f1239'},
+    {ico:'🎯',lbl:'Pros-blog Highest Focus',  val:'55.8%',desc:'55.8% of users from Pros-blog.padi.com (21,332 of 38,220) navigated to pro.padi.com — the highest single-destination referral rate in the dataset.',c:'#9f1239'},
+    {ico:'📦',lbl:'Store → Learning Movement',val:'376K', desc:'376,695 users navigated from store.padi.com to learning.padi.com — the second largest outbound flow from the store.',c:'#6d28d9'},
+  ];
+  const ie=document.getElementById('ins-grid');
+  ins.forEach(i=>{
+    ie.innerHTML+=`<div class="ins-card" style="border-left-color:${i.c}">
+      <div class="ins-lbl" style="color:${i.c}">${i.ico} ${i.lbl}</div>
+      <div class="ins-val">${i.val}</div>
+      <div class="ins-desc">${i.desc}</div>
+    </div>`;
+  });
+})();
+
+// ══════════════════════════════════════
+// FLOW DIAGRAM
+// ══════════════════════════════════════
+const CX=[120,490,830,1165,1500], RY=[80,265,450,635];
+const NW={discovery:178,hub:196,commerce:178,learning:178,account:178,pro:155};
+const NH=98;
+const maxU=Math.max(...LINKS.map(l=>l.u));
+let flInited=false, actNode=null;
+
+function nx(n){return CX[n.col];}
+function ny(n){return RY[n.row];}
+function nw(n){return NW[n.type]||178;}
+
+function initFlow(){
+  if(flInited) return; flInited=true;
+  const svg=d3.select('#svg-root');
+  const z=d3.zoom().scaleExtent([0.18,3]).on('zoom',e=>{
+    d3.select('#g-links').attr('transform',e.transform);
+    d3.select('#g-nodes').attr('transform',e.transform);
+  });
+  svg.call(z);
+  window._Z=z; window._S=svg;
+  const c=document.getElementById('canvas');
+  svg.call(z.transform,d3.zoomIdentity.translate((c.offsetWidth-1700)/2,(c.offsetHeight-760)/2).scale(0.82));
+  drawL(); drawN();
+}
+
+function drawL(aid=null){
+  const g=d3.select('#g-links'); g.selectAll('*').remove();
+  LINKS.forEach(l=>{
+    const s=NM[l.src],t=NM[l.tgt]; if(!s||!t) return;
+    const isA=aid&&(l.src===aid||l.tgt===aid), isDim=aid&&!isA;
+    const x1=nx(s)+nw(s), y1=ny(s)+NH/2, x2=nx(t), y2=ny(t)+NH/2, cx=(x1+x2)/2;
+    const sw=Math.max(1,(l.u/maxU)*15);
+    d3.select('#g-links').append('path')
+      .attr('d',`M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2}`)
+      .attr('fill','none')
+      .attr('stroke',isA?'#2563eb':'#94a3b8')
+      .attr('stroke-width',isA?Math.max(2,sw):Math.max(1,sw*0.6))
+      .attr('stroke-opacity',isDim?0.04:isA?0.72:0.16)
+      .attr('marker-end',isA?'url(#arr-b)':'url(#arr)');
+    if(isA){
+      const mx=cx,my=(y1+y2)/2;
+      g.append('rect').attr('x',mx-28).attr('y',my-9).attr('width',56).attr('height',16).attr('rx',4).attr('fill','#fff').attr('stroke','#e2e8f0');
+      g.append('text').attr('x',mx).attr('y',my+3).attr('text-anchor','middle').attr('font-family','JetBrains Mono').attr('font-size','9').attr('fill','#2563eb').attr('font-weight','600').text(fmt(l.u));
+    }
+  });
+}
+
+function drawN(){
+  const g=d3.select('#g-nodes'); g.selectAll('*').remove();
+  NODES.forEach(node=>{
+    const s=TS[node.type],w=nw(node),x=nx(node),y=ny(node);
+    const fo=g.append('foreignObject').attr('x',x).attr('y',y).attr('width',w).attr('height',NH).style('cursor','pointer').on('click',()=>onNC(node));
+    const div=fo.append('xhtml:div').attr('class','node-card'+(actNode===node.id?' active':'')).style('border-color',actNode===node.id?s.color:s.border).style('background',s.bg).style('height',NH+'px');
+    div.append('xhtml:div').style('position','absolute').style('top','0').style('left','0').style('width','3px').style('height','100%').style('background',s.color).style('border-radius','10px 0 0 10px');
+    div.append('xhtml:div').attr('class','node-tag').style('background',s.color+'18').style('color',s.color).text(s.tag);
+    div.append('xhtml:div').attr('class','node-title').text(node.label);
+    if(node.vol) div.append('xhtml:div').attr('class','node-vol').style('color',s.color).text(fmt(node.vol)+' users');
+    div.append('xhtml:div').attr('class','node-bar').style('background',s.color).style('width',Math.min(100,Math.max(6,(node.vol/2500000)*100))+'%');
+  });
+}
+
+function onNC(node){
+  if(actNode===node.id){actNode=null;drawL();drawN();closePanel();return;}
+  actNode=node.id; drawL(node.id); drawN(); showPanel(node);
+}
+
+function showPanel(node){
+  const s=TS[node.type];
+  document.getElementById('pt').textContent=node.label;
+  document.getElementById('pt').style.color=s.color;
+  document.getElementById('ps').textContent=s.tag+' · '+fmt(node.vol)+' users';
+  const pb=document.getElementById('pb'); pb.innerHTML='';
+
+  if(node.feat?.length){
+    const sec=document.createElement('div'); sec.className='ps';
+    sec.innerHTML='<div class="ps-title">Platform Capabilities</div>';
+    node.feat.forEach(f=>{const i=document.createElement('div');i.className='feat';i.textContent=f;sec.appendChild(i);});
+    pb.appendChild(sec);
+  }
+  if(node.out?.length){
+    const sec=document.createElement('div'); sec.className='ps'; sec.style.borderTop='1px solid #f1f5f9'; sec.style.paddingTop='8px';
+    sec.innerHTML='<div class="ps-title">Outbound →</div>';
+    const mf=Math.max(...node.out.map(f=>f.u));
+    node.out.slice(0,8).forEach(f=>{
+      const tgt=NM[f.to]; if(!tgt) return;
+      const ts=TS[tgt.type]; const pct=((f.u/node.vol)*100).toFixed(1);
+      const row=document.createElement('div'); row.className='fr';
+      row.innerHTML=`<div class="fr-dest">${tgt.label}</div><div class="fr-bw"><div class="fr-bf" style="width:${(f.u/mf)*100}%;background:${ts.color}"></div></div><div class="fr-val">${fmt(f.u)}<br><span style="font-size:9px;color:#94a3b8">${pct}%</span></div>`;
+      sec.appendChild(row);
+    });
+    pb.appendChild(sec);
+  }
+  const inb=LINKS.filter(l=>l.tgt===node.id).sort((a,b)=>b.u-a.u);
+  if(inb.length){
+    const sec=document.createElement('div'); sec.className='ps'; sec.style.borderTop='1px solid #f1f5f9'; sec.style.paddingTop='8px';
+    sec.innerHTML='<div class="ps-title">Inbound ←</div>';
+    const mi=Math.max(...inb.map(l=>l.u));
+    inb.slice(0,6).forEach(l=>{
+      const src=NM[l.src]; if(!src) return;
+      const ss=TS[src.type]; const row=document.createElement('div'); row.className='fr';
+      row.innerHTML=`<div class="fr-dest">${src.label}</div><div class="fr-bw"><div class="fr-bf" style="width:${(l.u/mi)*100}%;background:${ss.color}"></div></div><div class="fr-val">${fmt(l.u)}</div>`;
+      sec.appendChild(row);
+    });
+    pb.appendChild(sec);
+  }
+  document.getElementById('panel').classList.add('vis');
+}
+
+function closePanel(){
+  document.getElementById('panel').classList.remove('vis');
+  actNode=null; drawL(); drawN();
+}
+function resetView(){
+  if(!window._Z) return;
+  const c=document.getElementById('canvas');
+  window._S.transition().duration(500).call(window._Z.transform,d3.zoomIdentity.translate((c.offsetWidth-1700)/2,(c.offsetHeight-760)/2).scale(0.82));
+}
+function zoomIn(){if(window._Z) window._S.transition().duration(200).call(window._Z.scaleBy,1.3);}
+function zoomOut(){if(window._Z) window._S.transition().duration(200).call(window._Z.scaleBy,0.77);}
+</script>
+</body>
+</html>
